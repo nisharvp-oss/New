@@ -1,13 +1,14 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import "@lovable.dev/cloud-auth-js/styles.css";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Wordmark } from "@/components/ws/Brand";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>) => ({ plan: typeof s["plan"] === "string" ? s["plan"] : undefined }),
@@ -59,38 +60,76 @@ function AuthPage() {
   };
 
   return (
-    <main className="grid min-h-[80vh] place-items-center px-4 py-10">
-      <Card className="w-full max-w-sm p-6 shadow-card">
-        <h1 className="text-2xl font-extrabold">{mode === "up" ? "Create your account" : "Welcome back"}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{mode === "up" ? "Start your free trial or join your team." : "Sign in to your trips."}</p>
-        {sent ? (
-          <p className="mt-6 rounded-lg bg-muted p-4 text-sm">Check your inbox at <b>{email}</b> and click the confirmation link to finish.</p>
-        ) : (
-          <>
-            <div className="mt-5 space-y-2">
-              <Button variant="outline" className="w-full" onClick={() => oauth("google")}>Continue with Google</Button>
-              <button type="button" className="lovable-auth-button w-full" onClick={() => oauth("lovable")}>Continue with Lovable</button>
+    <main className="min-h-dvh bg-lagoon-deep text-navy-foreground lg:grid lg:grid-cols-[1fr_minmax(28rem,36rem)]">
+      <section className="latitudes pt-safe relative flex flex-col px-5 pb-10 sm:px-10 lg:min-h-dvh lg:pb-12">
+        <div className="flex h-16 items-center">
+          <Link to="/" aria-label="WanderSync home"><Wordmark /></Link>
+        </div>
+        <div className="mt-6 max-w-lg lg:my-auto">
+          <h1 className="rise font-display text-[clamp(2.1rem,5vw,3.75rem)] font-bold leading-[1] tracking-[-0.03em]">
+            {mode === "up" ? "Your next group trip starts here." : "Welcome back."}
+          </h1>
+          <p className="rise mt-4 text-lg text-navy-foreground/75" style={{ "--d": "120ms" } as React.CSSProperties}>
+            {mode === "up" ? "Create an account to start your company's free trial, plan a trip for friends, or join the team that invited you." : "Sign in to see your trips, tickets and team."}
+          </p>
+        </div>
+      </section>
+      <section className="pb-safe rounded-t-[2rem] bg-background text-foreground lg:grid lg:place-items-center lg:rounded-none">
+        <div className="mx-auto w-full max-w-sm px-5 py-8 sm:py-10">
+          {sent ? (
+            <div className="rounded-2xl bg-secondary p-5">
+              <p className="font-display text-xl font-semibold">Check your inbox</p>
+              <p className="mt-2 text-sm text-muted-foreground">We sent a confirmation link to <b className="text-foreground">{email}</b>. Open it on this device to finish.</p>
             </div>
-            <div className="my-4 text-center text-xs text-muted-foreground">or with email</div>
-            <form onSubmit={submit} className="space-y-3">
-              {mode === "up" && <div><Label>Your name</Label><Input value={name} onChange={(e) => setName(e.target.value)} required /></div>}
-              <div><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
-              <div><Label>Password</Label><Input type="password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
-              <Button className="w-full" disabled={busy}>{mode === "up" ? "Create account" : "Sign in"}</Button>
-            </form>
-            {mode === "in" && (
-              <button type="button" className="mt-3 w-full text-center text-sm text-muted-foreground underline" onClick={async () => {
-                if (!email) { toast.error("Enter your email above first"); return; }
-                const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
-                if (error) toast.error(error.message); else toast.success("Check your inbox for a reset link");
-              }}>Forgot password?</button>
-            )}
-            <button className="mt-4 w-full text-center text-sm text-primary" onClick={() => setMode(mode === "up" ? "in" : "up")}>
-              {mode === "up" ? "Already have an account? Sign in" : "New here? Create an account"}
-            </button>
-          </>
-        )}
-      </Card>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 rounded-xl bg-muted p-1 text-sm font-semibold" role="tablist" aria-label="Account">
+                {(["up", "in"] as const).map((m) => (
+                  <button key={m} type="button" role="tab" aria-selected={mode === m} onClick={() => setMode(m)}
+                    className={cn("rounded-lg py-2 transition-colors", mode === m ? "bg-card text-foreground shadow-card" : "text-muted-foreground")}>
+                    {m === "up" ? "Create account" : "Sign in"}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-6 space-y-2.5">
+                <Button variant="outline" size="lg" className="w-full" onClick={() => oauth("google")}><GoogleIcon /> Continue with Google</Button>
+                <button type="button" className="lovable-auth-button w-full" onClick={() => oauth("lovable")}>Continue with Lovable</button>
+              </div>
+              <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />or with email<span className="h-px flex-1 bg-border" /></div>
+              <form onSubmit={submit} className="space-y-4">
+                {mode === "up" && <div className="space-y-1.5"><Label htmlFor="name">Your name</Label><Input id="name" className="h-12 rounded-xl" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required /></div>}
+                <div className="space-y-1.5"><Label htmlFor="email">Email</Label><Input id="email" className="h-12 rounded-xl" type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    {mode === "in" && (
+                      <button type="button" className="text-sm font-medium text-primary" onClick={async () => {
+                        if (!email) { toast.error("Enter your email first, then tap Forgot password"); return; }
+                        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
+                        if (error) toast.error(error.message); else toast.success("Check your inbox for a reset link");
+                      }}>Forgot password?</button>
+                    )}
+                  </div>
+                  <Input id="password" className="h-12 rounded-xl" type="password" autoComplete={mode === "up" ? "new-password" : "current-password"} minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  {mode === "up" && <p className="text-xs text-muted-foreground">At least 8 characters.</p>}
+                </div>
+                <Button size="lg" className="w-full" disabled={busy}>{busy ? "One moment…" : mode === "up" ? "Create account" : "Sign in"}</Button>
+              </form>
+            </>
+          )}
+        </div>
+      </section>
     </main>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden>
+      <path fill="#4285F4" d="M22.6 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2.1-1.9 3.3-4.8 3.3-8.1z" />
+      <path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.7c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.8A11 11 0 0 0 12 23z" />
+      <path fill="#FBBC05" d="M5.8 14.2a6.6 6.6 0 0 1 0-4.3V7.1H2.1a11 11 0 0 0 0 9.9l3.7-2.8z" />
+      <path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2.1 7.1l3.7 2.8C6.7 7.3 9.1 5.4 12 5.4z" />
+    </svg>
   );
 }

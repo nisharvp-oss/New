@@ -50,8 +50,8 @@ function Traveler() {
   const going = s.members.filter((m) => m.invite === "accepted");
 
   return (
-    <main className="mx-auto max-w-md pb-28">
-      <div className="bg-gradient-ocean px-5 pb-6 pt-4 text-navy-foreground">
+    <main className="pb-tabbar mx-auto max-w-md">
+      <div className="latitudes bg-lagoon-deep px-5 pb-7 pt-4 text-navy-foreground">
         <div className="flex items-center justify-between gap-2">
           <Select value={s.currentTravelerId} onValueChange={(v) => s.set("currentTravelerId", v)}>
             <SelectTrigger className="h-8 w-auto gap-2 border-navy-foreground/20 bg-navy-foreground/10 text-xs"><span className="opacity-70">Viewing as</span><SelectValue /></SelectTrigger>
@@ -70,10 +70,10 @@ function Traveler() {
         {tab === "money" && <MoneyView meId={me.id} />}
         {tab === "people" && <PeopleView meId={me.id} />}
       </div>
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 backdrop-blur">
+      <nav aria-label="Trip sections" className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t bg-card/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-md justify-around py-2">
           {TABS.map(({ id, label, Icon }) => (
-            <button key={id} onClick={() => setTab(id)} className={cn("flex flex-col items-center gap-0.5 rounded-xl px-3 py-1 text-[11px] font-semibold", tab === id ? "text-primary" : "text-muted-foreground")}>
+            <button key={id} onClick={() => setTab(id)} className={cn("press flex flex-1 flex-col items-center gap-1 py-1.5 text-[11px] font-semibold transition-colors", tab === id ? "text-primary" : "text-muted-foreground")} aria-current={tab === id ? "page" : undefined}>
               <Icon className="h-5 w-5" />{label}
             </button>
           ))}

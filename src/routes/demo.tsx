@@ -62,9 +62,9 @@ function Organizer() {
       })}
 
       <section className="relative overflow-hidden rounded-3xl shadow-card">
-        <img src={cover} alt="Desert dunes at sunset" width={1600} height={704} className="h-56 w-full object-cover md:h-64" />
-        <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/40 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-4 p-6 text-navy-foreground">
+        <img src={cover} alt="Desert dunes at sunset" width={1600} height={704} className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-navy/95 via-navy/50 to-navy/10" />
+        <div className="relative flex min-h-56 flex-wrap items-end justify-between gap-4 p-5 pt-20 text-navy-foreground sm:p-6 sm:pt-28 md:min-h-64">
           <div>
             <Badge variant="sunset" className="mb-2">Organizer</Badge>
             <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">{s.trip.title}</h1>
@@ -79,7 +79,7 @@ function Organizer() {
       </section>
 
       <Tabs defaultValue="travelers">
-        <TabsList className="h-auto flex-wrap justify-start gap-1 bg-card p-1 shadow-card">
+        <TabsList>
           <TabsTrigger value="travelers"><Users className="h-4 w-4" /> Travelers</TabsTrigger>
           <TabsTrigger value="itinerary"><CalendarDays className="h-4 w-4" /> Itinerary</TabsTrigger>
           <TabsTrigger value="tickets"><TicketIcon className="h-4 w-4" /> Tickets</TabsTrigger>

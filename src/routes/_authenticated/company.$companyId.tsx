@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, CalendarDays, MapPin, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarDays, MapPin, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -55,15 +55,21 @@ function CompanyPage() {
   const personal = c.kind === "personal";
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 px-4 py-8">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-extrabold">{c.name}</h1>
-        {personal ? <Badge variant="secondary">Personal organiser</Badge> : <>
-          <Badge variant="outline">{statusLabel({ ...c, status: c.status as CompanyStatus })}</Badge>
-          {c.plan && <Badge variant="secondary">{c.plan.name} plan</Badge>}
-          {myRole && <Badge className="capitalize">{myRole}</Badge>}
-        </>}
-      </div>
+    <main>
+      <header className="latitudes bg-lagoon-deep text-navy-foreground">
+        <div className="mx-auto max-w-6xl px-4 pb-7 pt-4 sm:pb-9">
+          <Link to="/dashboard" className="-ml-2 inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-navy-foreground/75 hover:text-navy-foreground"><ArrowLeft className="h-4 w-4" /> My trips</Link>
+          <h1 className="rise mt-3 text-[clamp(1.9rem,5vw,2.75rem)] font-bold leading-[1.05]">{personal ? "My personal trips" : c.name}</h1>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+            {personal ? <span className="rounded-full bg-navy-foreground/10 px-2.5 py-1">Personal organiser</span> : <>
+              <span className="rounded-full bg-sunset px-2.5 py-1 text-sunset-foreground">{statusLabel({ ...c, status: c.status as CompanyStatus })}</span>
+              {c.plan && <span className="rounded-full bg-navy-foreground/10 px-2.5 py-1">{c.plan.name} plan</span>}
+              {myRole && <span className="rounded-full bg-navy-foreground/10 px-2.5 py-1 capitalize">{myRole}</span>}
+            </>}
+          </div>
+        </div>
+      </header>
+      <div className="mx-auto max-w-6xl space-y-6 px-4 py-6">
       {personal && <p className="text-sm text-muted-foreground">Each trip is free for a small group. Open a trip to add travelers, sponsors and more, or to unlock it for a bigger group.</p>}
       {!writable && (
         <div className="flex items-center gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm">
@@ -72,7 +78,7 @@ function CompanyPage() {
         </div>
       )}
       <Tabs defaultValue="trips">
-        <TabsList className="flex-wrap">
+        <TabsList>
           <TabsTrigger value="trips">Trips</TabsTrigger>
           {!personal && <TabsTrigger value="team">Team</TabsTrigger>}
           {isOwner && <TabsTrigger value="payments">Payment details</TabsTrigger>}
@@ -85,6 +91,7 @@ function CompanyPage() {
           <SmtpForm companyId={companyId} initial={c} onSave={async (f) => (await supabase.from("companies").update(f).eq("id", companyId)).error?.message ?? null} />
         </TabsContent>}
       </Tabs>
+      </div>
     </main>
   );
 }

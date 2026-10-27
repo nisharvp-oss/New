@@ -36,7 +36,7 @@ function Admin() {
     <main className="mx-auto max-w-6xl space-y-6 px-4 py-8">
       <h1 className="text-3xl font-extrabold">Platform admin</h1>
       <Tabs defaultValue="companies">
-        <TabsList className="h-auto flex-wrap"><TabsTrigger value="companies">Companies</TabsTrigger><TabsTrigger value="unlocks">Trip unlocks</TabsTrigger><TabsTrigger value="sponsors">Sponsors</TabsTrigger><TabsTrigger value="plans">Plans</TabsTrigger><TabsTrigger value="settings">Pricing, trial & mail</TabsTrigger><TabsTrigger value="payments">Payment accounts</TabsTrigger><TabsTrigger value="admins">Admins</TabsTrigger></TabsList>
+        <TabsList><TabsTrigger value="companies">Companies</TabsTrigger><TabsTrigger value="unlocks">Trip unlocks</TabsTrigger><TabsTrigger value="sponsors">Sponsors</TabsTrigger><TabsTrigger value="plans">Plans</TabsTrigger><TabsTrigger value="settings">Pricing, trial & mail</TabsTrigger><TabsTrigger value="payments">Payment accounts</TabsTrigger><TabsTrigger value="admins">Admins</TabsTrigger></TabsList>
         <TabsContent value="companies"><Companies /></TabsContent>
         <TabsContent value="unlocks"><Unlocks /></TabsContent>
         <TabsContent value="sponsors"><Sponsors /></TabsContent>

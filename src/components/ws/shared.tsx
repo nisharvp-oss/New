@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { Compass, LayoutDashboard, Smartphone, RotateCcw, Siren } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { BrandMark } from "./Brand";
 import { useApp } from "@/lib/store";
 import quad from "@/assets/addon-quad.jpg";
 import scuba from "@/assets/addon-scuba.jpg";
@@ -27,29 +28,25 @@ export function RoleBar() {
     <Link
       to={to}
       className={cn(
-        "flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
+        "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors sm:px-4",
         path === to ? "bg-card text-foreground shadow-card" : "text-navy-foreground/70 hover:text-navy-foreground",
       )}
     >
       <Icon className="h-4 w-4" />
-      <span className="hidden sm:inline">{label}</span>
+      <span>{label}</span>
     </Link>
   );
   return (
-    <header className="sticky top-0 z-40 bg-gradient-ocean text-navy-foreground">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5">
-        <div className="flex items-center gap-2 font-extrabold tracking-tight">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-sunset shadow-glow">
-            <Compass className="h-5 w-5" />
-          </span>
-          WanderSync
-          <span className="ml-2 hidden rounded-full border border-navy-foreground/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-navy-foreground/70 md:inline">
-            Demo
-          </span>
-        </div>
+    <header className="pt-safe sticky top-0 z-40 bg-navy/95 text-navy-foreground backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4">
+        <Link to="/" aria-label="WanderSync home" className="flex items-center gap-2">
+          <BrandMark />
+          <span className="hidden font-display text-[1.15rem] font-bold tracking-tight sm:inline">WanderSync</span>
+          <span className="hidden rounded-full bg-navy-foreground/10 px-2 py-0.5 text-xs text-navy-foreground/75 md:inline">Sample trip</span>
+        </Link>
         <nav className="flex items-center gap-1 rounded-full bg-navy-foreground/10 p-1">
-          {tab("/demo", "Organizer Mode", LayoutDashboard)}
-          {tab("/traveler", "Traveler Mode", Smartphone)}
+          {tab("/demo", "Organiser", LayoutDashboard)}
+          {tab("/traveler", "Traveler", Smartphone)}
         </nav>
         <div className="flex items-center gap-2">
           {activeSos > 0 && path !== "/demo" && (

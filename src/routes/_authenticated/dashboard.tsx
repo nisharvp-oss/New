@@ -2,10 +2,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Building2, Crown, ArrowRight, Users, Megaphone } from "lucide-react";
+import { Building2, ChevronRight, Crown, ArrowRight, MapPin, Users, Megaphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -72,61 +71,121 @@ function Dashboard() {
   const ownsOne = list.some((m) => m.role === "owner" && m.company?.kind !== "personal");
   const personal = list.find((m) => m.company?.kind === "personal");
 
+  const firstName = (user.user_metadata?.["full_name"] as string | undefined)?.split(" ")[0];
+  const trips = myTrips.data ?? [];
+  const companies = list.filter((m) => m.company?.kind !== "personal");
+
   return (
-    <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
-      <h1 className="text-3xl font-extrabold">Your workspace</h1>
-      {admin.data && (
-        <Card className="flex items-center gap-4 p-5 shadow-card">
-          <Crown className="h-8 w-8 text-primary" />
-          <div className="flex-1"><p className="font-bold">Platform admin</p><p className="text-sm text-muted-foreground">Plans, prices, trial length, companies and platform mail.</p></div>
-          <Button asChild><Link to="/admin">Open <ArrowRight className="h-4 w-4" /></Link></Button>
-        </Card>
-      )}
-      <Card className="flex flex-wrap items-center gap-4 p-5 shadow-card">
-        <Users className="h-8 w-8 text-primary" />
-        <div className="flex-1">
-          <p className="font-bold">Organise a trip yourself</p>
-          <p className="text-sm text-muted-foreground">Free for up to {terms.data?.free_travelers ?? 10} travelers per trip. Bigger trips are a one-time ${Number(terms.data?.unlock_price ?? 20).toFixed(0)} per trip.</p>
+    <main className="mx-auto max-w-4xl px-4 pb-10 pt-6 sm:pt-10">
+      <header className="rise">
+        <p className="text-sm text-muted-foreground" suppressHydrationWarning>{new Date().toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" })}</p>
+        <h1 className="mt-1 text-[clamp(2rem,6vw,2.75rem)] font-bold leading-tight">{firstName ? `Hi ${firstName}` : "Your trips"}</h1>
+      </header>
+
+      <section className="mt-8" aria-labelledby="trips-h">
+        <div className="flex items-baseline justify-between">
+          <h2 id="trips-h" className="text-xl font-bold">My trips</h2>
+          {trips.length > 0 && <span className="text-sm text-muted-foreground">{trips.length}</span>}
         </div>
-        <Button onClick={startPersonal}>{personal ? "My trips" : "Start organising"} <ArrowRight className="h-4 w-4" /></Button>
-      </Card>
-      <Card className="flex items-center gap-4 p-5 shadow-card">
-        <Megaphone className="h-8 w-8 text-primary" />
-        <div className="flex-1"><p className="font-bold">Sponsor dashboard</p><p className="text-sm text-muted-foreground">Business owners: update your logo, flyer and offer, and see how many travelers saw you.</p></div>
-        <Button variant="outline" asChild><Link to="/sponsor">Open <ArrowRight className="h-4 w-4" /></Link></Button>
-      </Card>
-      {list.filter((m) => m.company?.kind !== "personal").map((m) => m.company && (
-        <Card key={m.company.id} className="flex items-center gap-4 p-5 shadow-card">
-          <Building2 className="h-8 w-8 text-primary" />
-          <div className="flex-1">
-            <p className="font-bold">{m.company.name}</p>
-            <div className="mt-1 flex gap-2"><Badge variant="secondary" className="capitalize">{m.role}</Badge>
-              <Badge variant="outline">{statusLabel({ ...m.company, status: m.company.status as CompanyStatus })}</Badge></div>
+        {myTrips.isLoading ? (
+          <div className="mt-3 h-36 animate-pulse rounded-3xl bg-muted" />
+        ) : trips.length === 0 ? (
+          <div className="mt-3 rounded-3xl border border-dashed p-6 text-center">
+            <p className="font-semibold">No trips yet</p>
+            <p className="mt-1 text-sm text-muted-foreground">Trips you organise, look after or are invited to show up here.</p>
           </div>
-          <Button asChild><Link to="/company/$companyId" params={{ companyId: m.company.id }}>Open <ArrowRight className="h-4 w-4" /></Link></Button>
-        </Card>
-      ))}
-      {(myTrips.data?.length ?? 0) > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-xl font-bold">My trips</h2>
-          {myTrips.data!.map((t) => (
-            <Card key={t.id} className="flex items-center gap-4 p-4 shadow-card">
-              <div className="flex-1"><p className="font-bold">{t.title}</p><p className="text-sm text-muted-foreground">{t.destination} · {t.start_date ?? "dates TBC"}</p></div>
-              <Badge variant="secondary">{t.as}</Badge>
-              <Button size="sm" asChild><Link to="/trip/$tripId" params={{ tripId: t.id }}>Open</Link></Button>
-            </Card>
-          ))}
+        ) : (
+          <div className="no-scrollbar -mx-4 mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0">
+            {trips.map((t) => (
+              <Link key={t.id} to="/trip/$tripId" params={{ tripId: t.id }}
+                className="press relative w-[82%] shrink-0 snap-start overflow-hidden rounded-3xl bg-navy p-5 text-navy-foreground shadow-card sm:w-auto">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="rounded-full bg-navy-foreground/10 px-2.5 py-1 text-xs font-semibold">{t.as}</span>
+                  <ArrowRight className="h-5 w-5 text-navy-foreground/60" />
+                </div>
+                <p className="mt-6 font-display text-2xl font-semibold leading-tight">{t.title}</p>
+                <div className="mt-4 flex items-end justify-between gap-3 border-t border-dashed border-navy-foreground/20 pt-3 text-sm">
+                  <span className="flex min-w-0 items-center gap-1 text-navy-foreground/75"><MapPin className="h-4 w-4 shrink-0" /><span className="truncate">{t.destination}</span></span>
+                  <span className="shrink-0 font-board text-xs text-sunset">{t.start_date ?? "Dates TBC"}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {companies.length > 0 && (
+        <section className="mt-10" aria-labelledby="co-h">
+          <h2 id="co-h" className="text-xl font-bold">Companies</h2>
+          <ul className="mt-3 divide-y overflow-hidden rounded-2xl border bg-card shadow-card">
+            {companies.map((m) => m.company && (
+              <li key={m.company.id}>
+                <Link to="/company/$companyId" params={{ companyId: m.company.id }} className="flex items-center gap-4 p-4 transition-colors hover:bg-muted/60 active:bg-muted">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-secondary font-display text-lg font-bold text-secondary-foreground">{m.company.name.slice(0, 1).toUpperCase()}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{m.company.name}</p>
+                    <div className="mt-1 flex flex-wrap gap-1.5"><Badge variant="secondary" className="capitalize">{m.role}</Badge>
+                      <Badge variant="outline">{statusLabel({ ...m.company, status: m.company.status as CompanyStatus })}</Badge></div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
+
+      <section className="mt-10" aria-labelledby="more-h">
+        <h2 id="more-h" className="text-xl font-bold">More</h2>
+        <ul className="mt-3 divide-y overflow-hidden rounded-2xl border bg-card shadow-card">
+          <li>
+            <button type="button" onClick={startPersonal} className="flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-muted/60 active:bg-muted">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground"><Users className="h-5 w-5" /></span>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">{personal ? "My personal trips" : "Organise a trip yourself"}</p>
+                <p className="text-sm text-muted-foreground">Free for up to {terms.data?.free_travelers ?? 10} travelers. Bigger trips are a one-time ${Number(terms.data?.unlock_price ?? 20).toFixed(0)}.</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </button>
+          </li>
+          <li>
+            <Link to="/sponsor" className="flex items-center gap-4 p-4 transition-colors hover:bg-muted/60 active:bg-muted">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-secondary text-primary"><Megaphone className="h-5 w-5" /></span>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">Sponsor dashboard</p>
+                <p className="text-sm text-muted-foreground">For local businesses: update your logo, flyer and offer, and see how many travelers saw it.</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </Link>
+          </li>
+          {admin.data && (
+            <li>
+              <Link to="/admin" className="flex items-center gap-4 p-4 transition-colors hover:bg-muted/60 active:bg-muted">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-navy text-sunset"><Crown className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">Platform admin</p>
+                  <p className="text-sm text-muted-foreground">Plans, prices, trial length, companies and platform mail.</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </Link>
+            </li>
+          )}
+        </ul>
+      </section>
+
       {memberships.isSuccess && !ownsOne && (
-        <Card className="p-6 shadow-card">
-          <h2 className="text-xl font-bold">Set up your travel company</h2>
-          <p className="text-sm text-muted-foreground">Starts your free trial. If your company invited you, ask the owner to invite <b>{user.email}</b> and refresh.</p>
-          <form onSubmit={create} className="mt-4 flex flex-wrap items-end gap-2">
-            <div className="flex-1"><Label>Company name</Label><Input value={name} onChange={(e) => setName(e.target.value)} required /></div>
-            <Button>Start free trial</Button>
+        <section className="mt-10 rounded-3xl bg-navy p-6 text-navy-foreground sm:p-8">
+          <Building2 className="h-7 w-7 text-sunset" />
+          <h2 className="mt-4 text-2xl font-bold">Set up your travel company</h2>
+          <p className="mt-2 text-navy-foreground/75">This starts your free trial. If a company invited you, ask the owner to invite <b className="text-navy-foreground">{user.email}</b>, then reopen this page.</p>
+          <form onSubmit={create} className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex-1 space-y-1.5">
+              <Label htmlFor="company" className="text-navy-foreground/80">Company name</Label>
+              <Input id="company" className="h-12 rounded-xl border-navy-foreground/20 bg-navy-foreground/10 text-navy-foreground placeholder:text-navy-foreground/40" placeholder="e.g. Atlas Group Tours" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <Button size="lg" className="bg-sunset text-sunset-foreground hover:bg-sunset/90">Start free trial</Button>
           </form>
-        </Card>
+        </section>
       )}
     </main>
   );

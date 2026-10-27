@@ -15,7 +15,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { RoleBar } from "@/components/ws/shared";
-import { AppHeader } from "@/components/ws/AppHeader";
+import { AppHeader, MobileTabBar } from "@/components/ws/AppHeader";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -82,7 +82,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "theme-color", content: "#0f3a40" },
+      { name: "color-scheme", content: "light" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "WanderSync" },
+      { name: "application-name", content: "WanderSync" },
       { title: "WanderSync — Group Travel Operations" },
       { name: "description", content: "Run group trips: itineraries, tickets, add-ons, expense splitting and SOS safety." },
       { property: "og:type", content: "website" },
@@ -91,9 +98,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/icon.svg", type: "image/svg+xml" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Martian+Mono:wght@400;600&family=Onest:wght@400;500;600;700&display=swap" },
     ],
   }),
   shellComponent: RootShell,
@@ -121,6 +131,9 @@ function RootComponent() {
   const router = useRouter();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const isDemo = path === "/demo" || path === "/traveler";
+  // The landing and sign-in pages draw their own chrome.
+  const ownChrome = path === "/" || path === "/auth";
+  const inApp = /^\/(dashboard|company|trip|sponsor|admin)(\/|$)/.test(path);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
@@ -133,8 +146,15 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {isDemo ? <RoleBar /> : <AppHeader />}
-      <Outlet />
+      {ownChrome ? null : isDemo ? <RoleBar /> : <AppHeader />}
+      {inApp ? (
+        <div className="pb-tabbar md:pb-0">
+          <Outlet />
+        </div>
+      ) : (
+        <Outlet />
+      )}
+      {inApp && <MobileTabBar />}
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
   );

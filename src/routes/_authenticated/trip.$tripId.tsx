@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { mapsUrl } from "@/components/ws/shared";
@@ -48,21 +49,38 @@ function TripPage() {
   const { tripId } = Route.useParams();
   const { trip, staff } = useTripData(tripId);
   const free = useQuery({ queryKey: ["trip-free", tripId], queryFn: async () => (await supabase.rpc("trip_is_free", { _trip: tripId })).data ?? false });
-  if (trip.isLoading || staff.isLoading) return <p className="p-10 text-center text-muted-foreground">Loading trip…</p>;
-  if (!trip.data) return <p className="p-10 text-center">Trip not found or you don't have access.</p>;
+  if (trip.isLoading || staff.isLoading) return <TripSkeleton />;
+  if (!trip.data) return <p className="p-10 text-center">This trip doesn't exist, or your account isn't on it. Ask the organiser to invite your email.</p>;
   const t = trip.data;
   const isFree = free.data ?? false;
   return (
-    <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
-      <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-muted-foreground"><ArrowLeft className="h-4 w-4" /> Workspace</Link>
-      <div>
-        <h1 className="text-3xl font-extrabold">{t.title}</h1>
-        <p className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{t.destination || "—"}</span>
-          <span className="flex items-center gap-1"><CalendarDays className="h-4 w-4" />{t.start_date ?? "?"} → {t.end_date ?? "?"}</span>
-        </p>
+    <main>
+      <header className="latitudes bg-lagoon-deep text-navy-foreground">
+        <div className="mx-auto max-w-6xl px-4 pb-7 pt-4 sm:pb-9">
+          <Link to="/dashboard" className="-ml-2 inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-navy-foreground/75 hover:text-navy-foreground"><ArrowLeft className="h-4 w-4" /> My trips</Link>
+          <h1 className="rise mt-3 text-[clamp(1.9rem,5vw,2.75rem)] font-bold leading-[1.05]">{t.title}</h1>
+          <p className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-navy-foreground/75">
+            <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" />{t.destination || "Destination to be confirmed"}</span>
+            <span className="flex items-center gap-1.5 font-board text-xs text-sunset"><CalendarDays className="h-4 w-4" />{t.start_date ?? "TBC"} – {t.end_date ?? "TBC"}</span>
+          </p>
+        </div>
+      </header>
+      <div className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+        {staff.data ? <StaffView tripId={tripId} destination={t.destination} isFree={isFree} unlockRequested={t.unlock_requested} /> : <TravelerView tripId={tripId} destination={t.destination} isFree={isFree} />}
       </div>
-      {staff.data ? <StaffView tripId={tripId} destination={t.destination} isFree={isFree} unlockRequested={t.unlock_requested} /> : <TravelerView tripId={tripId} destination={t.destination} isFree={isFree} />}
+    </main>
+  );
+}
+
+function TripSkeleton() {
+  return (
+    <main aria-busy className="animate-pulse">
+      <div className="h-40 bg-lagoon-deep" />
+      <div className="mx-auto max-w-6xl space-y-3 px-4 py-6">
+        <div className="h-9 w-2/3 rounded-full bg-muted" />
+        <div className="h-28 rounded-2xl bg-muted" />
+        <div className="h-28 rounded-2xl bg-muted" />
+      </div>
     </main>
   );
 }
@@ -193,7 +211,7 @@ function StaffView({ tripId, destination, isFree, unlockRequested }: { tripId: s
         </div>
       ))}
       <Tabs defaultValue="travelers">
-        <TabsList className="flex-wrap">
+        <TabsList>
           <TabsTrigger value="travelers">Travelers</TabsTrigger><TabsTrigger value="itinerary">Itinerary</TabsTrigger>
           <TabsTrigger value="addons">Add-ons</TabsTrigger><TabsTrigger value="sponsors">Sponsors</TabsTrigger><TabsTrigger value="news">Announcements</TabsTrigger>
           <TabsTrigger value="tickets">Tickets</TabsTrigger><TabsTrigger value="checkins">Check-ins</TabsTrigger><TabsTrigger value="docs">Documents</TabsTrigger><TabsTrigger value="expenses">Expenses</TabsTrigger><TabsTrigger value="safety">Safety log</TabsTrigger>
@@ -433,7 +451,7 @@ function TravelerView({ tripId, destination, isFree }: { tripId: string; destina
     <>
       {me && <SosButton tripId={tripId} name={me.name} phone={me.phone} />}
       <Tabs defaultValue="plan">
-        <TabsList className="flex-wrap"><TabsTrigger value="plan">Schedule</TabsTrigger><TabsTrigger value="tickets">Tickets</TabsTrigger><TabsTrigger value="docs">Documents</TabsTrigger><TabsTrigger value="expenses">Expenses</TabsTrigger><TabsTrigger value="extras">Extras</TabsTrigger>{isFree && <TabsTrigger value="sponsors">Sponsors & nearby</TabsTrigger>}<TabsTrigger value="news">News</TabsTrigger><TabsTrigger value="me">My details</TabsTrigger></TabsList>
+        <TabsList><TabsTrigger value="plan">Schedule</TabsTrigger><TabsTrigger value="tickets">Tickets</TabsTrigger><TabsTrigger value="docs">Documents</TabsTrigger><TabsTrigger value="expenses">Expenses</TabsTrigger><TabsTrigger value="extras">Extras</TabsTrigger>{isFree && <TabsTrigger value="sponsors">Sponsors & nearby</TabsTrigger>}<TabsTrigger value="news">News</TabsTrigger><TabsTrigger value="me">My details</TabsTrigger></TabsList>
         <TabsContent value="plan"><ItineraryList items={itin.data ?? []} /></TabsContent>
         <TabsContent value="tickets">{me ? <MyTickets travelerId={me.id} /> : null}</TabsContent>
         <TabsContent value="docs">{me ? <TravelerDocuments tripId={tripId} travelerId={me.id} /> : null}</TabsContent>
@@ -461,11 +479,24 @@ function SosButton({ tripId, name, phone }: { tripId: string; name: string; phon
     if (!navigator.geolocation) { go(null, null); return; }
     navigator.geolocation.getCurrentPosition((p) => go(p.coords.latitude, p.coords.longitude), () => go(null, null), { timeout: 8000 });
   };
+  const [open, setOpen] = useState(false);
   return (
-    <Card className="flex flex-wrap items-center gap-2 border-destructive/40 p-3">
-      <Input className="flex-1" placeholder="What's wrong? (optional)" value={msg} onChange={(e) => setMsg(e.target.value)} />
-      <Button variant="destructive" onClick={send} disabled={busy}><Siren className="h-4 w-4" /> Send SOS</Button>
-    </Card>
+    <>
+      <button type="button" onClick={() => setOpen(true)} aria-label="Send SOS"
+        className="sos-pulse press fixed bottom-[calc(5.75rem+var(--safe-bottom))] right-4 z-40 flex h-16 w-16 flex-col items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground shadow-lg md:bottom-8 md:right-8">
+        <Siren className="h-6 w-6" />SOS
+      </button>
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerContent className="pb-safe">
+          <div className="mx-auto w-full max-w-md space-y-4 px-4 pb-6 pt-2">
+            <DrawerTitle className="flex items-center gap-2 font-display text-xl text-destructive"><Siren className="h-5 w-5" /> Send an emergency alert?</DrawerTitle>
+            <p className="text-sm text-muted-foreground">Your organiser and caretaker get your name, phone and current location straight away.</p>
+            <Textarea placeholder="What's happening? (optional)" value={msg} onChange={(e) => setMsg(e.target.value)} />
+            <Button variant="destructive" size="lg" className="w-full" onClick={() => { send(); setOpen(false); }} disabled={busy}>{busy ? "Getting your location…" : "Send SOS now"}</Button>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </>
   );
 }
 

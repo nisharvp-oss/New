@@ -28,6 +28,13 @@ WanderSync is a multi-tenant group-travel SaaS:
 - Pure, tested logic: `src/lib/splitwise.ts` (expense splits), `src/lib/subscription.ts` (mirrors DB `company_is_writable`), `src/lib/geo.ts` (sponsor sorting/distance).
 - Migrations: `drizzle/migrations/*.sql` (plain SQL, applied by tooling). Generated DB types: `src/integrations/supabase/types.ts` (don't hand-edit).
 
+## Design system & app shell
+- Mobile-first, installable app (PWA manifest in `public/manifest.webmanifest`, safe-area insets via `pt-safe`/`pb-safe`/`pb-tabbar`).
+- Palette tokens in `src/styles.css`: lagoon ink (`navy`, `lagoon-deep`), signal amber (`sunset`), sea glass (`primary`), flare red (`destructive`). Departures-board tokens: `board*`.
+- Type: Bricolage Grotesque (`font-display`, headings), Onest (body), Martian Mono (`font-board`, times/codes only).
+- Signed-in screens get a bottom tab bar on phones (`MobileTabBar` in `src/components/ws/AppHeader.tsx`); `/` and `/auth` draw their own chrome.
+- Landing motion lives in `src/components/landing/` (split-flap board, scroll-drawn route). Keep it to those two moments and respect `prefers-reduced-motion`.
+
 ## Security conventions
 - Roles live in `user_roles` + `has_role()`; never on profiles. First user ever becomes super admin (`handle_new_user`).
 - Admin-only writes go through `SECURITY DEFINER` RPCs that check `has_role` (e.g. `admin_set_trip_unlock`, `admin_set_sponsor_premium`, `grant_super_admin`) or guard triggers (billing columns, `unlocked`, `is_premium`).

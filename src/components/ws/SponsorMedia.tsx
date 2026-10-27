@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { must } from "@/lib/must";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -13,7 +14,7 @@ export function useSponsorImageUrl(value: string) {
     queryKey: ["sponsor-img", value],
     enabled: !!value && !isLink,
     staleTime: 50 * 60 * 1000,
-    queryFn: async () => (await supabase.storage.from("sponsor-media").createSignedUrl(value, 3600)).data?.signedUrl ?? "",
+    queryFn: async () => (await must(supabase.storage.from("sponsor-media").createSignedUrl(value, 3600)))?.signedUrl ?? "",
   });
   return isLink ? value : q.data ?? "";
 }

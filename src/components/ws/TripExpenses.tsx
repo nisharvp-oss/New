@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowRight, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { must } from "@/lib/must";
 import { computeSplits, netBalances, simplifyDebts, type Expense, type Settlement, type Split } from "@/lib/splitwise";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -17,9 +18,9 @@ const COMPANY = "company";
 const money = (n: number) => n.toFixed(2);
 
 function useExpenseData(tripId: string) {
-  const travelers = useQuery({ queryKey: ["travelers", tripId], queryFn: async () => (await supabase.from("trip_travelers").select("*").eq("trip_id", tripId).order("created_at")).data ?? [] });
-  const expenses = useQuery({ queryKey: ["expenses", tripId], queryFn: async () => (await supabase.from("trip_expenses").select("*").eq("trip_id", tripId).order("created_at", { ascending: false })).data ?? [] });
-  const settlements = useQuery({ queryKey: ["settlements", tripId], queryFn: async () => (await supabase.from("trip_settlements").select("*").eq("trip_id", tripId).order("created_at", { ascending: false })).data ?? [] });
+  const travelers = useQuery({ queryKey: ["travelers", tripId], queryFn: async () => (await must(supabase.from("trip_travelers").select("*").eq("trip_id", tripId).order("created_at"))) ?? [] });
+  const expenses = useQuery({ queryKey: ["expenses", tripId], queryFn: async () => (await must(supabase.from("trip_expenses").select("*").eq("trip_id", tripId).order("created_at", { ascending: false }))) ?? [] });
+  const settlements = useQuery({ queryKey: ["settlements", tripId], queryFn: async () => (await must(supabase.from("trip_settlements").select("*").eq("trip_id", tripId).order("created_at", { ascending: false }))) ?? [] });
   const exps: Expense[] = (expenses.data ?? []).map((e) => ({ id: e.id, groupId: tripId, paidBy: e.paid_by, amount: Number(e.amount), description: e.description, splitType: e.split_type as Expense["splitType"], splits: (e.splits as unknown as Split[]) ?? [], createdAt: e.created_at }));
   const sets: Settlement[] = (settlements.data ?? []).map((s) => ({ id: s.id, groupId: tripId, from: s.from_id, to: s.to_id, amount: Number(s.amount) }));
   const balances = netBalances(exps, sets);

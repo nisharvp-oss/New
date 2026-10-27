@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Crown, ExternalLink, MapPin, Phone, PlayCircle, Search, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { must } from "@/lib/must";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,7 +19,7 @@ type Sponsor = Database["public"]["Tables"]["trip_sponsors"]["Row"];
 export const CATEGORIES = ["Restaurant", "Cafe", "Souvenir shop", "Perfume shop", "Clothing", "Jewellery", "Spa & wellness", "Tour & activity", "Transport", "Hotel", "Other"];
 const OSM_TAG: Record<string, string> = { Restaurant: "restaurant", Cafe: "cafe", "Souvenir shop": "souvenir shop", "Perfume shop": "perfumery", Clothing: "clothes shop", Jewellery: "jewelry", "Spa & wellness": "spa", "Tour & activity": "tour", Transport: "car rental", Hotel: "hotel", Other: "" };
 
-const useSponsors = (tripId: string) => useQuery({ queryKey: ["sponsors", tripId], queryFn: async () => (await supabase.from("trip_sponsors").select("*").eq("trip_id", tripId)).data ?? [] });
+const useSponsors = (tripId: string) => useQuery({ queryKey: ["sponsors", tripId], queryFn: async () => (await must(supabase.from("trip_sponsors").select("*").eq("trip_id", tripId))) ?? [] });
 
 type OsmHit = { place_id: number; name: string; display_name: string; lat: string; lon: string; type: string };
 async function osmSearch(q: string): Promise<OsmHit[]> {
@@ -29,7 +30,7 @@ async function osmSearch(q: string): Promise<OsmHit[]> {
 
 /** Where the trip is, looked up once from its destination. */
 function useTripPlace(destination: string) {
-  return useQuery({ queryKey: ["geo", destination], enabled: !!destination, staleTime: Infinity, queryFn: async () => {
+  return useQuery({ queryKey: ["geo", destination], enabled: !!destination, staleTime: Infinity, meta: { quiet: true }, queryFn: async () => {
     const [hit] = await osmSearch(destination);
     return hit ? { lat: Number(hit.lat), lng: Number(hit.lon) } : null;
   } });

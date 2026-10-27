@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { must } from "@/lib/must";
 import { savePaymentSecret, paymentSecretStatus } from "@/lib/payment-settings.functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export function PaymentAccounts() {
   const qc = useQueryClient();
-  const settings = useQuery({ queryKey: ["pay-settings"], queryFn: async () => (await supabase.from("platform_settings").select("paypal_email,paypal_client_id,paypal_mode,stripe_publishable_key,stripe_account_email").eq("id", 1).single()).data });
+  const settings = useQuery({ queryKey: ["pay-settings"], queryFn: async () => (await must(supabase.from("platform_settings").select("paypal_email,paypal_client_id,paypal_mode,stripe_publishable_key,stripe_account_email").eq("id", 1).single())) });
   const status = useQuery({ queryKey: ["pay-secrets"], queryFn: () => paymentSecretStatus() });
   const [f, setF] = useState({ paypal_email: "", paypal_client_id: "", paypal_mode: "sandbox", stripe_publishable_key: "", stripe_account_email: "" });
   const [pp, setPp] = useState("");
@@ -64,7 +65,7 @@ export function PaymentAccounts() {
 
 export function SuperAdmins({ myId }: { myId: string }) {
   const qc = useQueryClient();
-  const list = useQuery({ queryKey: ["super-admins"], queryFn: async () => (await supabase.rpc("list_super_admins")).data ?? [] });
+  const list = useQuery({ queryKey: ["super-admins"], queryFn: async () => (await must(supabase.rpc("list_super_admins"))) ?? [] });
   const [email, setEmail] = useState("");
   const add = async (e: React.FormEvent) => {
     e.preventDefault();

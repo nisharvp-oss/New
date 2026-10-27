@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ArrowLeft, CalendarDays, CheckCircle2, MapPin, Megaphone, Plus, Siren, Sparkles, Trash2, Utensils } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { must } from "@/lib/must";
 import { generateItinerary, type AiItineraryItem } from "@/lib/ai-itinerary.functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -33,14 +34,14 @@ const money = (n: number | string) => `$${Number(n).toFixed(2)}`;
 const MEALS = ["Breakfast Included", "Lunch Included", "Lunch: Self-pay", "Dinner: Group Booking", "Dinner: Self-pay"];
 
 function useTripData(tripId: string) {
-  const trip = useQuery({ queryKey: ["trip", tripId], queryFn: async () => {
+  const trip = useQuery({ queryKey: ["trip", tripId], meta: { quiet: true }, queryFn: async () => {
     const { data, error } = await supabase.from("trips").select("*").eq("id", tripId).single();
     if (error) throw error;
     return data;
   } });
   const staff = useQuery({ queryKey: ["trip-staff", tripId], queryFn: async () => {
-    const { data: u } = await supabase.auth.getUser();
-    return (await supabase.rpc("is_trip_staff", { _trip: tripId, _user: u.user!.id })).data ?? false;
+    const { user } = await must(supabase.auth.getUser());
+    return (await must(supabase.rpc("is_trip_staff", { _trip: tripId, _user: user!.id }))) ?? false;
   } });
   return { trip, staff };
 }
@@ -48,7 +49,7 @@ function useTripData(tripId: string) {
 function TripPage() {
   const { tripId } = Route.useParams();
   const { trip, staff } = useTripData(tripId);
-  const free = useQuery({ queryKey: ["trip-free", tripId], queryFn: async () => (await supabase.rpc("trip_is_free", { _trip: tripId })).data ?? false });
+  const free = useQuery({ queryKey: ["trip-free", tripId], queryFn: async () => (await must(supabase.rpc("trip_is_free", { _trip: tripId }))) ?? false });
   if (trip.isLoading || staff.isLoading) return <TripSkeleton />;
   if (!trip.data) return <p className="p-10 text-center">This trip doesn't exist, or your account isn't on it. Ask the organiser to invite your email.</p>;
   const t = trip.data;
@@ -86,12 +87,12 @@ function TripSkeleton() {
 }
 
 /* ---------- shared data hooks ---------- */
-const useItinerary = (tripId: string) => useQuery({ queryKey: ["itin", tripId], queryFn: async () => (await supabase.from("itinerary_items").select("*").eq("trip_id", tripId).order("day").order("time")).data ?? [] });
-const useAddons = (tripId: string) => useQuery({ queryKey: ["addons", tripId], queryFn: async () => (await supabase.from("addons").select("*").eq("trip_id", tripId).order("created_at")).data ?? [] });
-const useBookings = (tripId: string) => useQuery({ queryKey: ["bookings", tripId], queryFn: async () => (await supabase.from("addon_bookings").select("*").eq("trip_id", tripId)).data ?? [] });
-const useTravelers = (tripId: string) => useQuery({ queryKey: ["travelers", tripId], queryFn: async () => (await supabase.from("trip_travelers").select("*").eq("trip_id", tripId).order("created_at")).data ?? [] });
-const useMessages = (tripId: string) => useQuery({ queryKey: ["msgs", tripId], queryFn: async () => (await supabase.from("trip_messages").select("*").eq("trip_id", tripId).order("created_at", { ascending: false })).data ?? [] });
-const useSos = (tripId: string) => useQuery({ queryKey: ["sos", tripId], queryFn: async () => (await supabase.from("sos_alerts").select("*").eq("trip_id", tripId).order("created_at", { ascending: false })).data ?? [] });
+const useItinerary = (tripId: string) => useQuery({ queryKey: ["itin", tripId], queryFn: async () => (await must(supabase.from("itinerary_items").select("*").eq("trip_id", tripId).order("day").order("time"))) ?? [] });
+const useAddons = (tripId: string) => useQuery({ queryKey: ["addons", tripId], queryFn: async () => (await must(supabase.from("addons").select("*").eq("trip_id", tripId).order("created_at"))) ?? [] });
+const useBookings = (tripId: string) => useQuery({ queryKey: ["bookings", tripId], queryFn: async () => (await must(supabase.from("addon_bookings").select("*").eq("trip_id", tripId))) ?? [] });
+const useTravelers = (tripId: string) => useQuery({ queryKey: ["travelers", tripId], queryFn: async () => (await must(supabase.from("trip_travelers").select("*").eq("trip_id", tripId).order("created_at"))) ?? [] });
+const useMessages = (tripId: string) => useQuery({ queryKey: ["msgs", tripId], queryFn: async () => (await must(supabase.from("trip_messages").select("*").eq("trip_id", tripId).order("created_at", { ascending: false }))) ?? [] });
+const useSos = (tripId: string) => useQuery({ queryKey: ["sos", tripId], queryFn: async () => (await must(supabase.from("sos_alerts").select("*").eq("trip_id", tripId).order("created_at", { ascending: false }))) ?? [] });
 
 function useLive(tripId: string) {
   const qc = useQueryClient();
@@ -171,7 +172,7 @@ function Announcements({ tripId, canPost }: { tripId: string; canPost: boolean }
 function FreeTripBanner({ tripId, requested }: { tripId: string; requested: boolean }) {
   const qc = useQueryClient();
   const travelers = useTravelers(tripId);
-  const terms = useQuery({ queryKey: ["free-terms"], queryFn: async () => (await supabase.rpc("free_trip_terms")).data?.[0] ?? null });
+  const terms = useQuery({ queryKey: ["free-terms"], queryFn: async () => (await must(supabase.rpc("free_trip_terms")))?.[0] ?? null });
   if (!terms.data) return null;
   const count = travelers.data?.length ?? 0;
   const request = async () => {
@@ -338,7 +339,7 @@ function StaffItinerary({ tripId }: { tripId: string }) {
 function AiPlanner({ tripId }: { tripId: string }) {
   const qc = useQueryClient();
   const gen = useServerFn(generateItinerary);
-  const trip = useQuery({ queryKey: ["trip-basic", tripId], queryFn: async () => (await supabase.from("trips").select("destination,start_date,end_date").eq("id", tripId).maybeSingle()).data });
+  const trip = useQuery({ queryKey: ["trip-basic", tripId], queryFn: async () => (await must(supabase.from("trips").select("destination,start_date,end_date").eq("id", tripId).maybeSingle())) });
   const [f, setF] = useState({ destination: "", startDate: "", endDate: "", interests: "" });
   const [items, setItems] = useState<AiItineraryItem[]>([]);
   const [busy, setBusy] = useState(false);
@@ -504,7 +505,7 @@ function TravelerExtras({ tripId, travelerId }: { tripId: string; travelerId: st
   const addons = useAddons(tripId);
   const bookings = useBookings(tripId);
   const qc = useQueryClient();
-  const pay = useQuery({ queryKey: ["payinfo", tripId], queryFn: async () => (await supabase.rpc("trip_payment_info", { _trip: tripId })).data?.[0] ?? null });
+  const pay = useQuery({ queryKey: ["payinfo", tripId], queryFn: async () => (await must(supabase.rpc("trip_payment_info", { _trip: tripId })))?.[0] ?? null });
   const book = async (addonId: string, method: string) => {
     const { error } = await supabase.from("addon_bookings").insert({ trip_id: tripId, addon_id: addonId, traveler_id: travelerId, method });
     if (error) { toast.error(error.message); return; }
@@ -579,7 +580,7 @@ function TicketCard({ t, name, onStatus }: { t: Ticket; name?: string | undefine
 function StaffTickets({ tripId }: { tripId: string }) {
   const qc = useQueryClient();
   const travelers = useTravelers(tripId);
-  const tickets = useQuery({ queryKey: ["tickets", tripId], queryFn: async () => ((await supabase.from("trip_tickets").select("*").eq("trip_id", tripId).order("created_at")).data ?? []) as Ticket[] });
+  const tickets = useQuery({ queryKey: ["tickets", tripId], queryFn: async () => ((await must(supabase.from("trip_tickets").select("*").eq("trip_id", tripId).order("created_at"))) ?? []) as Ticket[] });
   const [f, setF] = useState({ traveler: "all", title: "", details: "", valid_on: "" });
   const [check, setCheck] = useState("");
   const refresh = () => qc.invalidateQueries({ queryKey: ["tickets", tripId] });
@@ -621,7 +622,7 @@ function StaffTickets({ tripId }: { tripId: string }) {
   );
 }
 function MyTickets({ travelerId }: { travelerId: string }) {
-  const q = useQuery({ queryKey: ["mytickets", travelerId], queryFn: async () => ((await supabase.from("trip_tickets").select("*").eq("traveler_id", travelerId).order("valid_on")).data ?? []) as Ticket[] });
+  const q = useQuery({ queryKey: ["mytickets", travelerId], queryFn: async () => ((await must(supabase.from("trip_tickets").select("*").eq("traveler_id", travelerId).order("valid_on"))) ?? []) as Ticket[] });
   const [scanned, setScanned] = useState("");
   const code = scanned.trim().replace(/^WSTKT:/, "");
   const hit = code ? q.data?.find((t) => t.code === code) : undefined;

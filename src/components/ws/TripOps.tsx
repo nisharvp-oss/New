@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CheckCircle2, Circle, FileText, Plane, Trash2, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { must } from "@/lib/must";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,13 +15,13 @@ type Traveler = { id: string; name: string };
 type Doc = { id: string; traveler_id: string; kind: string; title: string; path: string; uploaded_by: string; created_at: string };
 
 const useTravelerList = (tripId: string) =>
-  useQuery({ queryKey: ["travelers", tripId], queryFn: async () => (await supabase.from("trip_travelers").select("*").eq("trip_id", tripId).order("created_at")).data ?? [] });
+  useQuery({ queryKey: ["travelers", tripId], queryFn: async () => (await must(supabase.from("trip_travelers").select("*").eq("trip_id", tripId).order("created_at"))) ?? [] });
 
 /* ---------- check-ins (staff) ---------- */
 export function StaffCheckins({ tripId }: { tripId: string }) {
   const qc = useQueryClient();
   const travelers = useTravelerList(tripId);
-  const checkins = useQuery({ queryKey: ["checkins", tripId], refetchInterval: 5000, queryFn: async () => (await supabase.from("trip_checkins").select("*").eq("trip_id", tripId).order("created_at")).data ?? [] });
+  const checkins = useQuery({ queryKey: ["checkins", tripId], refetchInterval: 5000, queryFn: async () => (await must(supabase.from("trip_checkins").select("*").eq("trip_id", tripId).order("created_at"))) ?? [] });
   const checkpoints = [...new Set((checkins.data ?? []).map((c) => c.checkpoint))];
   const [current, setCurrent] = useState("");
   const [newName, setNewName] = useState("");
@@ -119,7 +120,7 @@ async function removeDoc(d: Doc) {
 export function StaffDocuments({ tripId }: { tripId: string }) {
   const qc = useQueryClient();
   const travelers = useTravelerList(tripId);
-  const docs = useQuery({ queryKey: ["docs", tripId], queryFn: async () => ((await supabase.from("trip_documents").select("*").eq("trip_id", tripId).order("created_at", { ascending: false })).data ?? []) as Doc[] });
+  const docs = useQuery({ queryKey: ["docs", tripId], queryFn: async () => ((await must(supabase.from("trip_documents").select("*").eq("trip_id", tripId).order("created_at", { ascending: false }))) ?? []) as Doc[] });
   const [f, setF] = useState({ traveler: "", title: "", kind: "boarding_pass" as "document" | "boarding_pass" });
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -165,8 +166,8 @@ export function StaffDocuments({ tripId }: { tripId: string }) {
 
 export function TravelerDocuments({ tripId, travelerId }: { tripId: string; travelerId: string }) {
   const qc = useQueryClient();
-  const docs = useQuery({ queryKey: ["mydocs", travelerId], queryFn: async () => ((await supabase.from("trip_documents").select("*").eq("traveler_id", travelerId).order("created_at", { ascending: false })).data ?? []) as Doc[] });
-  const checkins = useQuery({ queryKey: ["mycheckins", travelerId], queryFn: async () => (await supabase.from("trip_checkins").select("*").eq("traveler_id", travelerId).order("created_at", { ascending: false })).data ?? [] });
+  const docs = useQuery({ queryKey: ["mydocs", travelerId], queryFn: async () => ((await must(supabase.from("trip_documents").select("*").eq("traveler_id", travelerId).order("created_at", { ascending: false }))) ?? []) as Doc[] });
+  const checkins = useQuery({ queryKey: ["mycheckins", travelerId], queryFn: async () => (await must(supabase.from("trip_checkins").select("*").eq("traveler_id", travelerId).order("created_at", { ascending: false }))) ?? [] });
   const [uid, setUid] = useState<string | null>(null);
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null)); }, []);
   const [title, setTitle] = useState("");

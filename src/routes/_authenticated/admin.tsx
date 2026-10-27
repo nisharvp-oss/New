@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { must } from "@/lib/must";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -51,8 +52,8 @@ function Admin() {
 
 function Companies() {
   const qc = useQueryClient();
-  const plans = useQuery({ queryKey: ["admin-plans"], queryFn: async () => (await supabase.from("plans").select("*").order("sort_order")).data ?? [] });
-  const q = useQuery({ queryKey: ["admin-companies"], queryFn: async () => (await supabase.from("companies").select("id,name,contact_email,status,plan_id,trial_ends_at,paid_until,created_at").eq("kind", "company").order("created_at", { ascending: false })).data ?? [] });
+  const plans = useQuery({ queryKey: ["admin-plans"], queryFn: async () => (await must(supabase.from("plans").select("*").order("sort_order"))) ?? [] });
+  const q = useQuery({ queryKey: ["admin-companies"], queryFn: async () => (await must(supabase.from("companies").select("id,name,contact_email,status,plan_id,trial_ends_at,paid_until,created_at").eq("kind", "company").order("created_at", { ascending: false }))) ?? [] });
   const update = async (id: string, patch: Database["public"]["Tables"]["companies"]["Update"]) => {
     const { error } = await supabase.from("companies").update(patch).eq("id", id);
     if (error) { toast.error(error.message); return; }
@@ -112,7 +113,7 @@ function Companies() {
 
 function Plans() {
   const qc = useQueryClient();
-  const q = useQuery({ queryKey: ["admin-plans"], queryFn: async () => (await supabase.from("plans").select("*").order("sort_order")).data ?? [] });
+  const q = useQuery({ queryKey: ["admin-plans"], queryFn: async () => (await must(supabase.from("plans").select("*").order("sort_order"))) ?? [] });
   const add = async () => {
     const { error } = await supabase.from("plans").insert({ name: "New plan", price: 0, sort_order: (q.data?.length ?? 0) + 1 });
     if (error) toast.error(error.message); else qc.invalidateQueries({ queryKey: ["admin-plans"] });
@@ -165,7 +166,7 @@ function PlanCard({ plan }: { plan: Plan }) {
 }
 
 function Settings() {
-  const q = useQuery({ queryKey: ["platform-settings"], queryFn: async () => (await supabase.from("platform_settings").select("*").eq("id", 1).single()).data });
+  const q = useQuery({ queryKey: ["platform-settings"], queryFn: async () => (await must(supabase.from("platform_settings").select("*").eq("id", 1).single())) });
   const [days, setDays] = useState(14);
   const [freeN, setFreeN] = useState(10);
   const [price, setPrice] = useState(20);
@@ -196,7 +197,7 @@ function Settings() {
 function Unlocks() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["admin-unlocks"], queryFn: async () => {
-    const { data } = await supabase.from("trips").select("id,title,destination,unlocked,unlock_requested,created_at,company:companies!inner(name,kind,contact_email)").eq("company.kind", "personal").order("unlock_requested", { ascending: false }).order("created_at", { ascending: false });
+    const data = await must(supabase.from("trips").select("id,title,destination,unlocked,unlock_requested,created_at,company:companies!inner(name,kind,contact_email)").eq("company.kind", "personal").order("unlock_requested", { ascending: false }).order("created_at", { ascending: false }));
     return data ?? [];
   } });
   const set = async (id: string, unlocked: boolean) => {
@@ -227,7 +228,7 @@ function Unlocks() {
 
 function Sponsors() {
   const qc = useQueryClient();
-  const q = useQuery({ queryKey: ["admin-sponsors"], queryFn: async () => (await supabase.from("trip_sponsors").select("id,name,kind,category,is_premium,trip:trips(title,destination)").order("is_premium", { ascending: false }).order("created_at", { ascending: false })).data ?? [] });
+  const q = useQuery({ queryKey: ["admin-sponsors"], queryFn: async () => (await must(supabase.from("trip_sponsors").select("id,name,kind,category,is_premium,trip:trips(title,destination)").order("is_premium", { ascending: false }).order("created_at", { ascending: false }))) ?? [] });
   const set = async (id: string, is_premium: boolean) => {
     const { error } = await supabase.rpc("admin_set_sponsor_premium", { _sponsor: id, _premium: is_premium });
     if (error) toast.error(error.message); else qc.invalidateQueries({ queryKey: ["admin-sponsors"] });

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { supabase } from "@/integrations/supabase/client";
+import { must } from "@/lib/must";
 import { useSession } from "@/hooks/use-session";
 import { cn } from "@/lib/utils";
 import { Wordmark } from "./Brand";
@@ -24,7 +25,7 @@ function useIsAdmin(userId: string | undefined) {
   return useQuery({
     queryKey: ["is-admin", userId],
     enabled: !!userId,
-    queryFn: async () => (await supabase.rpc("has_role", { _user_id: userId!, _role: "super_admin" })).data ?? false,
+    queryFn: async () => (await must(supabase.rpc("has_role", { _user_id: userId!, _role: "super_admin" }))) ?? false,
   });
 }
 

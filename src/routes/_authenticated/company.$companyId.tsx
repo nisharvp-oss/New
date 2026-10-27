@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, ArrowLeft, CalendarDays, MapPin, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { must } from "@/lib/must";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/company/$companyId")({
 });
 
 function useCompany(id: string) {
-  return useQuery({ queryKey: ["company", id], queryFn: async () => {
+  return useQuery({ queryKey: ["company", id], meta: { quiet: true }, queryFn: async () => {
     const { data, error } = await supabase.from("companies").select("*, plan:plans(*)").eq("id", id).single();
     if (error) throw error;
     return data;
@@ -34,9 +35,9 @@ function useCompany(id: string) {
 }
 function useTeam(id: string) {
   return useQuery({ queryKey: ["team", id], queryFn: async () => {
-    const { data: members } = await supabase.from("company_members").select("id,user_id,role").eq("company_id", id);
+    const members = await must(supabase.from("company_members").select("id,user_id,role").eq("company_id", id));
     const ids = (members ?? []).map((m) => m.user_id);
-    const { data: profiles } = ids.length ? await supabase.from("profiles").select("id,email,full_name").in("id", ids) : { data: [] };
+    const profiles = ids.length ? await must(supabase.from("profiles").select("id,email,full_name").in("id", ids)) : [];
     return (members ?? []).map((m) => ({ ...m, profile: profiles?.find((p) => p.id === m.user_id) }));
   } });
 }
@@ -101,7 +102,7 @@ const who = (t: TeamRow | undefined) => t?.profile?.full_name || t?.profile?.ema
 
 function Trips({ company, team, canEdit, isOwner }: { company: Company; team: TeamRow[]; canEdit: boolean; isOwner: boolean }) {
   const qc = useQueryClient();
-  const q = useQuery({ queryKey: ["trips", company.id], queryFn: async () => (await supabase.from("trips").select("*").eq("company_id", company.id).order("start_date")).data ?? [] });
+  const q = useQuery({ queryKey: ["trips", company.id], queryFn: async () => (await must(supabase.from("trips").select("*").eq("company_id", company.id).order("start_date"))) ?? [] });
   const del = async (id: string) => {
     const { error } = await supabase.from("trips").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
@@ -182,7 +183,7 @@ function Team({ companyId, team, isOwner, maxOrganisers }: { companyId: string; 
   const qc = useQueryClient();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"organiser" | "caretaker">("organiser");
-  const invites = useQuery({ enabled: isOwner, queryKey: ["invites", companyId], queryFn: async () => (await supabase.from("company_invites").select("*").eq("company_id", companyId)).data ?? [] });
+  const invites = useQuery({ enabled: isOwner, queryKey: ["invites", companyId], queryFn: async () => (await must(supabase.from("company_invites").select("*").eq("company_id", companyId))) ?? [] });
   const invite = async (e: React.FormEvent) => {
     e.preventDefault();
     const { error } = await supabase.from("company_invites").insert({ company_id: companyId, email: email.trim().toLowerCase(), role });

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Building2, ChevronRight, Crown, ArrowRight, MapPin, Users, Megaphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { must } from "@/lib/must";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,7 +34,7 @@ function Dashboard() {
 
   const admin = useQuery({
     queryKey: ["is-admin", user.id],
-    queryFn: async () => (await supabase.rpc("has_role", { _user_id: user.id, _role: "super_admin" })).data ?? false,
+    queryFn: async () => (await must(supabase.rpc("has_role", { _user_id: user.id, _role: "super_admin" }))) ?? false,
   });
   const memberships = useQuery({
     queryKey: ["memberships", user.id],
@@ -57,14 +58,14 @@ function Dashboard() {
   const myTrips = useQuery({
     queryKey: ["my-trips", user.id],
     queryFn: async () => {
-      const { data: tt } = await supabase.from("trip_travelers").select("trip_id").eq("user_id", user.id);
+      const tt = await must(supabase.from("trip_travelers").select("trip_id").eq("user_id", user.id));
       const ids = (tt ?? []).map((x) => x.trip_id);
-      const { data } = await supabase.from("trips").select("id,title,destination,start_date,organiser_id,caretaker_id")
-        .or(`organiser_id.eq.${user.id},caretaker_id.eq.${user.id}${ids.length ? `,id.in.(${ids.join(",")})` : ""}`).order("start_date");
+      const data = await must(supabase.from("trips").select("id,title,destination,start_date,organiser_id,caretaker_id")
+        .or(`organiser_id.eq.${user.id},caretaker_id.eq.${user.id}${ids.length ? `,id.in.(${ids.join(",")})` : ""}`).order("start_date"));
       return (data ?? []).map((t) => ({ ...t, as: t.organiser_id === user.id ? "Organiser" : t.caretaker_id === user.id ? "Caretaker" : "Traveler" }));
     },
   });
-  const terms = useQuery({ queryKey: ["free-terms"], queryFn: async () => (await supabase.rpc("free_trip_terms")).data?.[0] ?? null });
+  const terms = useQuery({ queryKey: ["free-terms"], queryFn: async () => (await must(supabase.rpc("free_trip_terms")))?.[0] ?? null });
   const startPersonal = async () => {
     const { data, error } = await supabase.rpc("get_personal_space");
     if (error) { toast.error(error.message); return; }
@@ -92,6 +93,12 @@ function Dashboard() {
         </div>
         {myTrips.isLoading ? (
           <div className="mt-3 h-36 animate-pulse rounded-3xl bg-muted" />
+        ) : myTrips.isError ? (
+          <div role="alert" className="mt-3 rounded-3xl border border-destructive/40 bg-destructive/5 p-6 text-center">
+            <p className="font-semibold">Your trips didn't load</p>
+            <p className="mt-1 text-sm text-muted-foreground">{myTrips.error.message}</p>
+            <Button variant="outline" className="mt-4" onClick={() => myTrips.refetch()}>Try again</Button>
+          </div>
         ) : trips.length === 0 ? (
           <div className="mt-3 rounded-3xl border border-dashed p-6 text-center">
             <p className="font-semibold">No trips yet</p>

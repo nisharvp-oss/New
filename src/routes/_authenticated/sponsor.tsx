@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Crown, Eye, MousePointerClick } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { must } from "@/lib/must";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -62,7 +63,7 @@ function SponsorDashboard() {
 function ListingEditor({ s }: { s: Sponsor }) {
   const qc = useQueryClient();
   const [f, setF] = useState({ name: s.name, description: s.description, logo_url: s.logo_url, flyer_url: s.flyer_url, video_url: s.video_url, website: s.website, phone: s.phone, address: s.address });
-  const trip = useQuery({ queryKey: ["sponsor-trip", s.trip_id], queryFn: async () => (await supabase.from("trips").select("title,destination").eq("id", s.trip_id).maybeSingle()).data });
+  const trip = useQuery({ queryKey: ["sponsor-trip", s.trip_id], queryFn: async () => (await must(supabase.from("trips").select("title,destination").eq("id", s.trip_id).maybeSingle())) });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
   const save = async (e: React.FormEvent) => {
     e.preventDefault();

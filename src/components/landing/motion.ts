@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, type RefObject } from "react";
+import { createJourney } from "./journey";
 
 /**
  * Scroll motion for the landing page, driven by data attributes so the markup stays declarative:
@@ -8,12 +9,24 @@ import { useEffect, useRef, useState, type RefObject } from "react";
  * - data-hscroll / data-track   pins the section and slides the track sideways (desktop only)
  * - data-expand                 grows from an inset rounded card to full bleed as it scrolls in
  * - data-count="42.5"           counts up from 0 when it enters
- * Everything is skipped when the visitor prefers reduced motion; the static layout is complete.
+ * - data-journey                route from phone to phone; each vehicle rides its leg with the scroll
+ * Everything is skipped when the visitor prefers reduced motion; the static layout is complete
+ * (the route is still drawn, with each vehicle parked halfway along its leg).
  */
 export function useLandingMotion(root: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const el = root.current;
-    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!el) return;
+    const journeyRoot = el.querySelector<HTMLElement>("[data-journey]");
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const journey = journeyRoot && createJourney(journeyRoot);
+      if (!journey) return;
+      const still = () => { journey.layout(); for (let i = 0; i < journey.count; i++) journey.setProgress(i, 1, 0.5); };
+      still();
+      window.addEventListener("resize", still);
+      window.addEventListener("load", still);
+      return () => { window.removeEventListener("resize", still); window.removeEventListener("load", still); };
+    }
     let cleanup = () => {};
     let cancelled = false;
 
@@ -41,6 +54,7 @@ export function useLandingMotion(root: RefObject<HTMLElement | null>) {
       };
       el.addEventListener("click", onClick);
 
+      let journeyCleanup = () => {};
       const ctx = gsap.context(() => {
         gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((node) => {
           gsap.from(node, {
@@ -78,6 +92,23 @@ export function useLandingMotion(root: RefObject<HTMLElement | null>) {
           });
         });
 
+        const journey = journeyRoot && createJourney(journeyRoot);
+        if (journey) {
+          journey.layout();
+          ScrollTrigger.addEventListener("refreshInit", journey.layout);
+          for (let i = 0; i < journey.count; i++) {
+            journey.setProgress(i, 0);
+            ScrollTrigger.create({
+              start: () => journey.range(i)[0],
+              end: () => journey.range(i)[1],
+              invalidateOnRefresh: true,
+              onUpdate: (self) => journey.setProgress(i, self.progress),
+              onRefresh: (self) => journey.setProgress(i, self.progress),
+            });
+          }
+          journeyCleanup = () => ScrollTrigger.removeEventListener("refreshInit", journey.layout);
+        }
+
         const mm = gsap.matchMedia();
         mm.add("(min-width: 1024px)", () => {
           gsap.utils.toArray<HTMLElement>("[data-hscroll]").forEach((section) => {
@@ -92,7 +123,17 @@ export function useLandingMotion(root: RefObject<HTMLElement | null>) {
         });
       }, el);
 
+      // Photos and fonts change heights after first paint; re-measure so the route stays attached.
+      const refresh = () => ScrollTrigger.refresh();
+      window.addEventListener("load", refresh);
+      let pending = 0;
+      const ro = new ResizeObserver(() => { cancelAnimationFrame(pending); pending = requestAnimationFrame(refresh); });
+      ro.observe(el);
+
       cleanup = () => {
+        window.removeEventListener("load", refresh);
+        ro.disconnect();
+        journeyCleanup();
         el.removeEventListener("click", onClick);
         ctx.revert();
         gsap.ticker.remove(raf);
@@ -102,19 +143,4 @@ export function useLandingMotion(root: RefObject<HTMLElement | null>) {
 
     return () => { cancelled = true; cleanup(); };
   }, [root]);
-}
-
-/** Index of the step currently crossing the middle of the viewport. */
-export function useActiveStep(count: number): [(i: number) => (node: HTMLElement | null) => void, number] {
-  const [active, setActive] = useState(0);
-  const nodes = useRef<(HTMLElement | null)[]>([]);
-  useEffect(() => {
-    const io = new IntersectionObserver(
-      (entries) => entries.forEach((e) => { if (e.isIntersecting) setActive(Number((e.target as HTMLElement).dataset["step"])); }),
-      { rootMargin: "-45% 0px -45% 0px" },
-    );
-    nodes.current.slice(0, count).forEach((n) => n && io.observe(n));
-    return () => io.disconnect();
-  }, [count]);
-  return [(i) => (node) => { nodes.current[i] = node; }, active];
 }

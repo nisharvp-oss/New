@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import {
-  ArrowRight, ArrowUpRight, Banknote, BellRing, Briefcase, Check, CheckCircle2, ClipboardList, CreditCard, Link2,
-  MapPin, ShieldCheck, Siren, Star, Ticket, Users, Wallet,
+  ArrowRight, ArrowUpRight, Banknote, BellRing, Briefcase, CarFront, Check, CheckCircle2, ClipboardList, CreditCard, FileText, Link2,
+  MapPin, Navigation, Phone, Plane, QrCode, ShieldCheck, Ship, Siren, Star, Ticket, TrainFront, Users, Utensils, Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Wordmark } from "@/components/ws/Brand";
@@ -13,7 +13,6 @@ import quad from "@/assets/addon-quad.jpg";
 import scuba from "@/assets/addon-scuba.jpg";
 import cook from "@/assets/addon-cook.jpg";
 import { Face, HomeScreen, PhoneFrame, SosScreen, SplitScreen, TicketScreen } from "./Phone";
-import { useActiveStep } from "./motion";
 import { useSiteImages } from "@/lib/site-images.functions";
 
 const d = (ms: number) => ({ "--d": `${ms}ms` }) as CSSProperties;
@@ -83,7 +82,7 @@ export function Hero({ trialDays }: { trialDays: number }) {
             </div>
           </div>
           <div className="relative hidden justify-center lg:flex">
-            <div data-parallax="-0.12" className="intro relative" style={d(400)}>
+            <div data-stop-d="0" className="intro relative" style={d(400)}>
               <PhoneFrame dark className="w-[290px]"><HomeScreen /></PhoneFrame>
               <Glass className="float-y absolute -left-24 top-24 w-52" style={d(0)}>
                 <div className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-success" /><p className="text-sm font-semibold">22 of 24 checked in</p></div>
@@ -101,59 +100,124 @@ export function Hero({ trialDays }: { trialDays: number }) {
   );
 }
 
-const STEPS = [
-  { icon: ClipboardList, title: "Today's plan, on every phone", body: "Times, meeting points and meal notes for each day. Change a pickup time and every traveler sees it straight away.", screen: <HomeScreen /> },
-  { icon: Ticket, title: "Tickets that never get lost", body: "Flights, entries and boarding passes live in the app with scannable QR codes. Caretakers scan people in at each stop.", screen: <TicketScreen /> },
-  { icon: Wallet, title: "Split the bill, keep the friendship", body: "Travelers log shared costs and see who owes whom, settled in the fewest payments.", screen: <SplitScreen /> },
-  { icon: Siren, title: "Help is one tap away", body: "SOS shares the traveler's live location with the organiser and caretaker, with their name and phone.", screen: <SosScreen /> },
+type Point = { icon: typeof Ticket; t: string; d: string };
+const STEPS: { kicker: string; icon: typeof Ticket; title: string; body: string; points: Point[]; screen: ReactNode }[] = [
+  {
+    kicker: "Itinerary", icon: ClipboardList, title: "Today's plan, on every phone",
+    body: "Build each day once and every traveler carries it. No printed schedules, no forwarded PDFs, no \"what time is pickup?\" messages.",
+    points: [
+      { icon: MapPin, t: "Times and meeting points", d: "with a map link for every stop" },
+      { icon: Utensils, t: "Meal notes", d: "included, group booking or self-pay" },
+      { icon: BellRing, t: "Instant updates", d: "change a time and everyone sees it" },
+    ],
+    screen: <HomeScreen />,
+  },
+  {
+    kicker: "Tickets & check-in", icon: Ticket, title: "Tickets that never get lost",
+    body: "Flights, entries, transfers and boarding passes sit in each traveler's app, ready to scan at the gate or the bus door.",
+    points: [
+      { icon: QrCode, t: "Scannable QR codes", d: "for every ticket you issue" },
+      { icon: FileText, t: "Documents and boarding passes", d: "sent to the right person" },
+      { icon: CheckCircle2, t: "Check-ins at each stop", d: "caretakers see who's missing" },
+    ],
+    screen: <TicketScreen />,
+  },
+  {
+    kicker: "Split bills", icon: Wallet, title: "Split the bill, keep the friendship",
+    body: "Travelers log what they paid as they go. WanderSync keeps a running balance and works out who owes whom.",
+    points: [
+      { icon: Users, t: "Groups for anything", d: "rooms, activities or the whole trip" },
+      { icon: Wallet, t: "Equal, exact or percentage", d: "splits that add up to the cent" },
+      { icon: Check, t: "Fewest payments", d: "to settle everyone up at the end" },
+    ],
+    screen: <SplitScreen />,
+  },
+  {
+    kicker: "Safety", icon: Siren, title: "Help is one tap away",
+    body: "If something goes wrong, a traveler presses SOS and the people responsible for them know straight away.",
+    points: [
+      { icon: Navigation, t: "Live location", d: "shared with the organiser and caretaker" },
+      { icon: Phone, t: "Name and phone", d: "so the team can call back immediately" },
+      { icon: ShieldCheck, t: "Safety log", d: "every alert recorded and resolved" },
+    ],
+    screen: <SosScreen />,
+  },
 ];
 
-export function FeatureStory() {
-  const [stepRef, active] = useActiveStep(STEPS.length);
+/** The vehicles that carry the route from one phone to the next. */
+export const JOURNEY_LEGS = [
+  { icon: Plane, label: "By air" },
+  { icon: Ship, label: "By sea" },
+  { icon: TrainFront, label: "By rail" },
+  { icon: CarFront, label: "By road" },
+];
+
+/**
+ * Route drawn between the hero phone and each feature phone; motion.ts sizes the paths
+ * from the stops' positions and moves each vehicle along its leg as the page scrolls.
+ */
+export function JourneyOverlay() {
   return (
-    <section id="features" className="scroll-mt-20 py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        <div className="max-w-2xl" data-reveal>
+    <div aria-hidden data-journey-overlay className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+      <svg data-route className="absolute left-0 top-0 overflow-visible">
+        {JOURNEY_LEGS.map((_, i) => (
+          <g key={i} data-leg={i}>
+            <path data-base className="fill-none stroke-primary/30" strokeWidth="2.5" strokeDasharray="1 9" strokeLinecap="round" />
+            <path data-progress className="fill-none stroke-primary" strokeWidth="3" strokeLinecap="round" />
+          </g>
+        ))}
+        {[0, 1, 2, 3, 4].map((i) => <circle key={i} data-dot={i} r="7" className="fill-primary stroke-card" strokeWidth="3.5" />)}
+      </svg>
+      {JOURNEY_LEGS.map((leg, i) => (
+        <span key={i} data-vehicle={i} className="absolute left-0 top-0 grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-glow ring-4 ring-card ring-1 ring-black/5 transition-opacity duration-300">
+          <leg.icon className="h-[22px] w-[22px]" />
+        </span>
+      ))}
+    </div>
+  );
+}
+
+export function FeatureStory() {
+  return (
+    <section id="features" className="scroll-mt-20 pb-16 pt-20 sm:pb-24 sm:pt-28">
+      <div className="mx-auto max-w-6xl px-5 sm:px-8">
+        <div className="relative max-w-2xl pl-12 lg:pl-0" data-reveal>
+          <span data-stop-m="0" className="absolute left-0 top-1 h-6 w-6 lg:hidden" />
           <p className="font-semibold text-primary">Everything in one app</p>
           <h2 className="mt-3 text-[clamp(2rem,4.6vw,3.5rem)] font-extrabold leading-[1.05] tracking-[-0.03em]">Your whole trip, in everyone's pocket</h2>
+          <p className="mt-4 text-lg text-muted-foreground">Follow a trip from the first plan to the last stop. Every traveler gets the same app, your team sees everything.</p>
         </div>
 
-        {/* Desktop: the phone stays put and its screen changes as each step passes the middle. */}
-        <div className="mt-16 hidden gap-20 lg:grid lg:grid-cols-[1fr_auto]">
-          <ol>
-            {STEPS.map((s, i) => (
-              <li key={s.title} ref={stepRef(i)} data-step={i} className="flex min-h-[78vh] items-center">
-                <div className={cn("max-w-md transition-all duration-500", active === i ? "opacity-100" : "opacity-30")}>
-                  <span className={cn("grid h-14 w-14 place-items-center rounded-2xl transition-colors duration-500", active === i ? "bg-primary text-primary-foreground shadow-glow" : "bg-accent text-primary")}><s.icon className="h-6 w-6" /></span>
-                  <h3 className="mt-6 text-4xl font-extrabold leading-tight tracking-[-0.03em]">{s.title}</h3>
-                  <p className="mt-4 text-lg leading-relaxed text-muted-foreground">{s.body}</p>
+        <ol className="mt-14 space-y-24 sm:mt-16 lg:mt-48 lg:space-y-40">
+          {STEPS.map((s, i) => {
+            const phoneLeft = i % 2 === 0;
+            return (
+              <li key={s.title} data-stop-m={i + 1} className="grid items-center gap-10 pl-12 lg:grid-cols-2 lg:gap-20 lg:pl-0">
+                <div data-reveal className={cn("max-w-lg", phoneLeft ? "lg:order-2" : "lg:justify-self-end")}>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1.5 text-sm font-semibold text-primary">
+                    <s.icon className="h-4 w-4" />{s.kicker}
+                  </span>
+                  <h3 className="mt-4 text-[clamp(1.75rem,3.2vw,2.5rem)] font-extrabold leading-tight tracking-[-0.03em]">{s.title}</h3>
+                  <p className="mt-3 text-lg leading-relaxed text-muted-foreground">{s.body}</p>
+                  <ul className="mt-6 space-y-3">
+                    {s.points.map((p) => (
+                      <li key={p.t} className="flex items-center gap-3">
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-card text-primary shadow-card"><p.icon className="h-[18px] w-[18px]" /></span>
+                        <span><span className="font-semibold">{p.t}</span> <span className="text-muted-foreground">{p.d}</span></span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className={cn("flex justify-center", phoneLeft ? "lg:order-1 lg:justify-end" : "lg:justify-start")}>
+                  <div data-stop-d={i + 1} className="relative">
+                    <div className="absolute -inset-10 -z-10 rounded-full bg-accent/80 blur-3xl" />
+                    <PhoneFrame className="w-[240px] sm:w-[270px]">{s.screen}</PhoneFrame>
+                  </div>
                 </div>
               </li>
-            ))}
-          </ol>
-          <div className="sticky top-[calc(50vh-320px)] h-fit">
-            <div className="absolute -inset-16 -z-10 rounded-full bg-accent blur-3xl" />
-            <PhoneFrame className="w-[300px]">
-              {STEPS.map((s, i) => (
-                <div key={s.title} className={cn("absolute inset-0 transition-all duration-700 ease-out", active === i ? "translate-y-0 opacity-100" : i < active ? "-translate-y-6 opacity-0" : "translate-y-6 opacity-0")}>{s.screen}</div>
-              ))}
-            </PhoneFrame>
-          </div>
-        </div>
-
-        {/* Phones: each step brings its own screen. */}
-        <div className="mt-12 space-y-16 lg:hidden">
-          {STEPS.map((s) => (
-            <div key={s.title} data-reveal className="grid justify-items-center gap-6 text-center">
-              <div className="max-w-md">
-                <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-glow"><s.icon className="h-5 w-5" /></span>
-                <h3 className="mt-4 text-2xl font-extrabold tracking-[-0.02em]">{s.title}</h3>
-                <p className="mt-2 text-muted-foreground">{s.body}</p>
-              </div>
-              <PhoneFrame className="w-[250px]">{s.screen}</PhoneFrame>
-            </div>
-          ))}
-        </div>
+            );
+          })}
+        </ol>
       </div>
     </section>
   );

@@ -34,7 +34,7 @@ WanderSync is a multi-tenant group-travel SaaS:
 - Type: Plus Jakarta Sans throughout; tight negative tracking on large headings.
 - Signed-in screens get a bottom tab bar on phones (`MobileTabBar` in `src/components/ws/AppHeader.tsx`); `/` and `/auth` draw their own chrome.
 - Site photos: super admins replace them in Admin → Site images. Slots and bundled fallbacks live in `src/lib/site-images.ts` (pure, tested); rows in `site_images` + public `site-media` bucket (migration 0011); read with `useSiteImages()` (preloaded by the root loader). Add a slot there before using a new marketing/app photo.
-- Landing (`src/components/landing/`): `Sections.tsx` holds the sections, `Phone.tsx` the phone frame and app screens, `motion.ts` the scroll engine (Lenis + GSAP ScrollTrigger, loaded client-side only). Animate through data attributes (`data-reveal`, `data-reveal-group`, `data-parallax`, `data-hscroll`/`data-track`, `data-expand`, `data-count`); everything must still read correctly with `prefers-reduced-motion`.
+- Landing (`src/components/landing/`): `Sections.tsx` holds the sections, `Phone.tsx` the phone frame and app screens, `motion.ts` the scroll engine (Lenis + GSAP ScrollTrigger, loaded client-side only). Animate through data attributes (`data-reveal`, `data-reveal-group`, `data-parallax`, `data-hscroll`/`data-track`, `data-expand`, `data-count`). The feature route (`journey.ts`) connects `data-stop-d` phones (desktop) or `data-stop-m` rows (mobile) inside `[data-journey]`, with one vehicle per leg in `JOURNEY_LEGS`; everything must still read correctly with `prefers-reduced-motion`.
 
 ## Security conventions
 - Roles live in `user_roles` + `has_role()`; never on profiles. First user ever becomes super admin (`handle_new_user`).

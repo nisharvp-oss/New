@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef } from "react";
-import { ExtrasGallery, FeatureStory, FinalCta, Footer, Hero, Nav, Pricing, Roles, SplitSection } from "@/components/landing/Sections";
+import { ExtrasGallery, FeatureStory, FinalCta, Footer, Hero, JourneyOverlay, Nav, Pricing, Roles, SplitSection } from "@/components/landing/Sections";
 import { useLandingMotion } from "@/components/landing/motion";
 
 const getPricing = createServerFn({ method: "GET" }).handler(async () => {
@@ -49,8 +49,11 @@ function Landing() {
     <div ref={root} className="overflow-x-clip">
       <Nav />
       <main>
-        <Hero trialDays={data.trialDays} />
-        <FeatureStory />
+        <div data-journey className="relative">
+          <Hero trialDays={data.trialDays} />
+          <FeatureStory />
+          <JourneyOverlay />
+        </div>
         <SplitSection />
         <ExtrasGallery />
         <Roles />

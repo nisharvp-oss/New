@@ -14,6 +14,7 @@ import scuba from "@/assets/addon-scuba.jpg";
 import cook from "@/assets/addon-cook.jpg";
 import { Face, HomeScreen, PhoneFrame, SosScreen, SplitScreen, TicketScreen } from "./Phone";
 import { useActiveStep } from "./motion";
+import { useSiteImages } from "@/lib/site-images.functions";
 
 const d = (ms: number) => ({ "--d": `${ms}ms` }) as CSSProperties;
 
@@ -56,13 +57,14 @@ function Glass({ children, className, style }: { children: ReactNode; className?
 }
 
 export function Hero({ trialDays }: { trialDays: number }) {
+  const photos = useSiteImages();
   return (
     <section className="relative px-2 pt-2 sm:px-3 sm:pt-3">
       <div className="relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem]">
         <div data-parallax="0.18" className="absolute inset-0">
-          <img src={cover} alt="A travel group walking the desert dunes at sunset" className="intro-photo h-full w-full object-cover" fetchPriority="high" />
+          <img src={photos.landing_hero.src} alt={photos.landing_hero.alt} className="intro-photo h-full w-full object-cover" fetchPriority="high" />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/45" />
         <div className="relative mx-auto grid min-h-[min(100svh,900px)] max-w-7xl items-end gap-10 px-5 pb-12 pt-32 sm:px-8 lg:grid-cols-[1.5fr_1fr] lg:pb-16">
           <div className="text-white">
             <p className="intro inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-sm backdrop-blur" style={d(100)}>
@@ -349,10 +351,11 @@ export function Pricing({ plans, trialDays, freeTravelers, unlockPrice }: { plan
 }
 
 export function FinalCta({ trialDays }: { trialDays: number }) {
+  const photos = useSiteImages();
   return (
     <section className="pb-3">
       <div data-expand className="relative overflow-hidden">
-        <img src={scuba} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={photos.landing_cta.src} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
         <div className="relative mx-auto flex min-h-[80svh] max-w-7xl flex-col items-start justify-end px-5 pb-16 text-white sm:px-8 sm:pb-20">
           <h2 className="max-w-3xl text-[clamp(2.4rem,6vw,4.75rem)] font-extrabold leading-[1.02] tracking-[-0.035em]" data-reveal>Your next group trip, without the chaos.</h2>

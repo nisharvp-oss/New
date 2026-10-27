@@ -19,6 +19,7 @@ import { SmtpForm } from "@/components/ws/SmtpForm";
 import { PaymentAccounts, SuperAdmins } from "@/components/ws/AdminPaymentsAndAdmins";
 import { statusLabel, type CompanyStatus } from "@/lib/subscription";
 import { Badge } from "@/components/ui/badge";
+import { AdminSiteImages } from "@/components/ws/AdminSiteImages";
 
 type Plan = Database["public"]["Tables"]["plans"]["Row"];
 
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
     const { data } = await supabase.rpc("has_role", { _user_id: context.user.id, _role: "super_admin" });
     if (!data) throw redirect({ to: "/dashboard" });
   },
-  head: () => ({ meta: [{ title: "Platform admin — WanderSync" }, { name: "description", content: "Manage subscription plans, trials and companies." }] }),
+  head: () => ({ meta: [{ title: "Platform admin — WanderSync" }, { name: "description", content: "Manage subscription plans, trials, companies and site photos." }] }),
   component: Admin,
 });
 
@@ -37,11 +38,12 @@ function Admin() {
     <main className="mx-auto max-w-6xl space-y-6 px-4 py-8">
       <h1 className="text-3xl font-extrabold">Platform admin</h1>
       <Tabs defaultValue="companies">
-        <TabsList><TabsTrigger value="companies">Companies</TabsTrigger><TabsTrigger value="unlocks">Trip unlocks</TabsTrigger><TabsTrigger value="sponsors">Sponsors</TabsTrigger><TabsTrigger value="plans">Plans</TabsTrigger><TabsTrigger value="settings">Pricing, trial & mail</TabsTrigger><TabsTrigger value="payments">Payment accounts</TabsTrigger><TabsTrigger value="admins">Admins</TabsTrigger></TabsList>
+        <TabsList><TabsTrigger value="companies">Companies</TabsTrigger><TabsTrigger value="unlocks">Trip unlocks</TabsTrigger><TabsTrigger value="sponsors">Sponsors</TabsTrigger><TabsTrigger value="plans">Plans</TabsTrigger><TabsTrigger value="images">Site images</TabsTrigger><TabsTrigger value="settings">Pricing, trial & mail</TabsTrigger><TabsTrigger value="payments">Payment accounts</TabsTrigger><TabsTrigger value="admins">Admins</TabsTrigger></TabsList>
         <TabsContent value="companies"><Companies /></TabsContent>
         <TabsContent value="unlocks"><Unlocks /></TabsContent>
         <TabsContent value="sponsors"><Sponsors /></TabsContent>
         <TabsContent value="plans"><Plans /></TabsContent>
+        <TabsContent value="images"><AdminSiteImages userId={user.id} /></TabsContent>
         <TabsContent value="settings"><Settings /></TabsContent>
         <TabsContent value="payments"><PaymentAccounts /></TabsContent>
         <TabsContent value="admins"><SuperAdmins myId={user.id} /></TabsContent>

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { statusLabel, type CompanyStatus } from "@/lib/subscription";
-import cover from "@/assets/trip-cover.jpg";
+import { useSiteImages } from "@/lib/site-images.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Your workspace — WanderSync" }, { name: "description", content: "Your WanderSync companies and admin tools." }] }),
@@ -18,6 +18,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 function Dashboard() {
+  const photos = useSiteImages();
   const { user } = Route.useRouteContext();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -111,7 +112,7 @@ function Dashboard() {
               <Link key={t.id} to="/trip/$tripId" params={{ tripId: t.id }}
                 className="press w-[82%] shrink-0 snap-start overflow-hidden rounded-3xl bg-card shadow-card sm:w-auto">
                 <div className="relative h-36">
-                  <img src={cover} alt="" className="h-full w-full object-cover" />
+                  <img src={photos.trip_cover.src} alt="" className="h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                   <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold">{t.as}</span>
                   <p className="absolute bottom-3 left-4 right-4 truncate text-xl font-extrabold text-white">{t.title}</p>

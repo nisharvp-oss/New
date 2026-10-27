@@ -17,6 +17,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { RoleBar } from "@/components/ws/shared";
 import { AppHeader, MobileTabBar } from "@/components/ws/AppHeader";
 import { supabase } from "@/integrations/supabase/client";
+import { siteImagesQuery } from "@/lib/site-images.functions";
 
 function NotFoundComponent() {
   return (
@@ -106,6 +107,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" },
     ],
   }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(siteImagesQuery),
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

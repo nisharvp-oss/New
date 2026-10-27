@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Wordmark } from "@/components/ws/Brand";
 import { cn } from "@/lib/utils";
-import cover from "@/assets/trip-cover.jpg";
+import { useSiteImages } from "@/lib/site-images.functions";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>) => ({ plan: typeof s["plan"] === "string" ? s["plan"] : undefined }),
@@ -25,6 +25,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
+  const photos = useSiteImages();
   const { plan } = Route.useSearch();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"in" | "up">("up");
@@ -63,8 +64,8 @@ function AuthPage() {
   return (
     <main className="min-h-dvh bg-background text-white lg:grid lg:grid-cols-[1fr_minmax(28rem,36rem)]">
       <section className="pt-safe relative flex flex-col overflow-hidden px-5 pb-14 sm:px-10 lg:m-3 lg:min-h-[calc(100dvh-1.5rem)] lg:rounded-[2.5rem] lg:pb-12">
-        <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/70" />
+        <img src={photos.auth_panel.src} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/80" />
         <div className="relative flex h-16 items-center">
           <Link to="/" aria-label="WanderSync home"><Wordmark /></Link>
         </div>

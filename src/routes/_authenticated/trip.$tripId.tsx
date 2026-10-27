@@ -24,7 +24,7 @@ import { emailAnnouncement } from "@/lib/smtp.functions";
 import { StaffCheckins, StaffDocuments, TravelerDocuments } from "@/components/ws/TripOps";
 import { StaffExpenses, TravelerExpenses } from "@/components/ws/TripExpenses";
 import { StaffSponsors, TravelerSponsors } from "@/components/ws/TripSponsors";
-import cover from "@/assets/trip-cover.jpg";
+import { useSiteImages } from "@/lib/site-images.functions";
 
 export const Route = createFileRoute("/_authenticated/trip/$tripId")({
   head: () => ({ meta: [{ title: "Trip — WanderSync" }, { name: "description", content: "Trip itinerary, travelers, extras, announcements and safety." }] }),
@@ -48,6 +48,7 @@ function useTripData(tripId: string) {
 }
 
 function TripPage() {
+  const photos = useSiteImages();
   const { tripId } = Route.useParams();
   const { trip, staff } = useTripData(tripId);
   const free = useQuery({ queryKey: ["trip-free", tripId], queryFn: async () => (await must(supabase.rpc("trip_is_free", { _trip: tripId }))) ?? false });
@@ -58,8 +59,8 @@ function TripPage() {
   return (
     <main>
       <header className="relative overflow-hidden text-white">
-        <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/70" />
+        <img src={photos.trip_cover.src} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/80" />
         <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-4 sm:pb-14">
           <Link to="/dashboard" className="-ml-2 inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-white/85 hover:text-white"><ArrowLeft className="h-4 w-4" /> My trips</Link>
           <h1 className="rise mt-10 text-[clamp(1.9rem,5vw,2.75rem)] font-extrabold leading-[1.05]">{t.title}</h1>

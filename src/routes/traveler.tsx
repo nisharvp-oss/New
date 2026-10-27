@@ -19,7 +19,7 @@ import { useApp, memberName, money, type Meal, type PayMethod, type Expense } fr
 import { computeSplits, netBalances, simplifyDebts } from "@/lib/splitwise";
 import { Avatar, QRCode, addonImages, mapsUrl, useHydratedStore } from "@/components/ws/shared";
 import { cn } from "@/lib/utils";
-import cover from "@/assets/trip-cover.jpg";
+import { useSiteImages } from "@/lib/site-images.functions";
 
 export const Route = createFileRoute("/traveler")({
   head: () => ({
@@ -43,6 +43,7 @@ const TABS: { id: Tab; label: string; Icon: typeof CalendarDays }[] = [
 ];
 
 function Traveler() {
+  const photos = useSiteImages();
   const ready = useHydratedStore();
   const [tab, setTab] = useState<Tab>("trip");
   const s = useApp();
@@ -53,8 +54,8 @@ function Traveler() {
   return (
     <main className="pb-tabbar mx-auto max-w-md">
       <div className="relative overflow-hidden px-5 pb-10 pt-4 text-white">
-        <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/70" />
+        <img src={photos.app_home.src} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/80" />
       <div className="relative flex items-center justify-between gap-2">
           <Select value={s.currentTravelerId} onValueChange={(v) => s.set("currentTravelerId", v)}>
             <SelectTrigger className="h-8 w-auto gap-2 border-navy-foreground/20 bg-navy-foreground/10 text-xs"><span className="opacity-70">Viewing as</span><SelectValue /></SelectTrigger>

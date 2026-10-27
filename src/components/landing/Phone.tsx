@@ -4,7 +4,7 @@ import {
   Bell, CalendarDays, ChevronRight, Home, MapPin, MessageCircle, Plane, Siren, Sparkles, Ticket, UserRound, Utensils, Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import cover from "@/assets/trip-cover.jpg";
+import { useSiteImages } from "@/lib/site-images.functions";
 
 /** iPhone-style frame. Children fill the screen; the frame scales with its width. */
 export function PhoneFrame({ children, className, dark = false }: { children: ReactNode; className?: string; dark?: boolean }) {
@@ -63,11 +63,12 @@ export function Face({ name, className }: { name: string; className?: string }) 
 }
 
 export function HomeScreen() {
+  const photos = useSiteImages();
   return (
     <div className="relative h-full">
       <div className="relative h-[44%]">
-        <img src={cover} alt="" className="h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/10 to-black/55" />
+        <img src={photos.app_home.src} alt="" className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/30 to-black/70" />
         <div className="absolute inset-x-0 top-12 flex items-center justify-between px-4">
           <span className="flex items-center gap-2 text-[13px] font-semibold text-white"><Face name="Alex Rivera" />Hi, Alex</span>
           <span className="grid h-8 w-8 place-items-center rounded-full bg-white/90"><Bell className="h-4 w-4" /></span>

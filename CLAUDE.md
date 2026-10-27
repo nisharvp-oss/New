@@ -33,6 +33,7 @@ WanderSync is a multi-tenant group-travel SaaS:
 - Look: clean white surfaces, one confident blue (`primary`), ink (`navy`) for dark panels, amber (`sunset`) only for ratings. Real photography carries the mood; photo headers use an image plus a dark gradient.
 - Type: Plus Jakarta Sans throughout; tight negative tracking on large headings.
 - Signed-in screens get a bottom tab bar on phones (`MobileTabBar` in `src/components/ws/AppHeader.tsx`); `/` and `/auth` draw their own chrome.
+- Site photos: super admins replace them in Admin → Site images. Slots and bundled fallbacks live in `src/lib/site-images.ts` (pure, tested); rows in `site_images` + public `site-media` bucket (migration 0011); read with `useSiteImages()` (preloaded by the root loader). Add a slot there before using a new marketing/app photo.
 - Landing (`src/components/landing/`): `Sections.tsx` holds the sections, `Phone.tsx` the phone frame and app screens, `motion.ts` the scroll engine (Lenis + GSAP ScrollTrigger, loaded client-side only). Animate through data attributes (`data-reveal`, `data-reveal-group`, `data-parallax`, `data-hscroll`/`data-track`, `data-expand`, `data-count`); everything must still read correctly with `prefers-reduced-motion`.
 
 ## Security conventions

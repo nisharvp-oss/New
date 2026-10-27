@@ -50,7 +50,7 @@ export function DeparturesBoard({ className }: { className?: string }) {
   }, [reduced]);
 
   return (
-    <div className={cn("board relative overflow-hidden rounded-[1.25rem] p-3 sm:p-5", className)} aria-label="Departures board showing group trips leaving today">
+    <div className={cn("board relative overflow-hidden rounded-[1.25rem] p-3 sm:p-5", className)}>
       <div className="mb-3 flex items-center justify-between px-1 text-board-dim">
         <span className="font-display text-lg font-semibold tracking-tight text-board-ink sm:text-xl">Departures</span>
         <span className="font-board text-xs tabular-nums sm:text-sm" suppressHydrationWarning>{clock ?? " "}</span>

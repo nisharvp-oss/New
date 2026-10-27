@@ -25,6 +25,10 @@ function Dashboard() {
     supabase.rpc("accept_my_invites").then(({ data }) => {
       if (data && data > 0) { toast.success("You joined your team"); qc.invalidateQueries({ queryKey: ["memberships"] }); }
     });
+    // Linking writes to the database, so run it once per visit rather than on every refetch.
+    supabase.rpc("link_my_trips").then(({ data }) => {
+      if (data) qc.invalidateQueries({ queryKey: ["my-trips"] });
+    });
   }, [qc]);
 
   const admin = useQuery({
@@ -53,7 +57,6 @@ function Dashboard() {
   const myTrips = useQuery({
     queryKey: ["my-trips", user.id],
     queryFn: async () => {
-      await supabase.rpc("link_my_trips");
       const { data: tt } = await supabase.from("trip_travelers").select("trip_id").eq("user_id", user.id);
       const ids = (tt ?? []).map((x) => x.trip_id);
       const { data } = await supabase.from("trips").select("id,title,destination,start_date,organiser_id,caretaker_id")

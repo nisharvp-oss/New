@@ -46,7 +46,8 @@ function FlapCell({ target, delay }: { target: string; delay: number }) {
 export function SplitFlap({ text, length, delay = 0, className }: { text: string; length: number; delay?: number; className?: string }) {
   const padded = text.toUpperCase().padEnd(length, " ").slice(0, length);
   return (
-    <span className={cn("inline-flex gap-[2px]", className)} role="text" aria-label={text}>
+    <span className={cn("inline-flex gap-[2px]", className)}>
+      <span className="sr-only">{text}</span>
       {padded.split("").map((ch, i) => (
         <FlapCell key={i} target={ch} delay={delay + i * 45} />
       ))}

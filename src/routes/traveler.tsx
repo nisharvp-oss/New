@@ -19,6 +19,7 @@ import { useApp, memberName, money, type Meal, type PayMethod, type Expense } fr
 import { computeSplits, netBalances, simplifyDebts } from "@/lib/splitwise";
 import { Avatar, QRCode, addonImages, mapsUrl, useHydratedStore } from "@/components/ws/shared";
 import { cn } from "@/lib/utils";
+import cover from "@/assets/trip-cover.jpg";
 
 export const Route = createFileRoute("/traveler")({
   head: () => ({
@@ -51,19 +52,21 @@ function Traveler() {
 
   return (
     <main className="pb-tabbar mx-auto max-w-md">
-      <div className="latitudes bg-lagoon-deep px-5 pb-7 pt-4 text-navy-foreground">
-        <div className="flex items-center justify-between gap-2">
+      <div className="relative overflow-hidden px-5 pb-10 pt-4 text-white">
+        <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/70" />
+      <div className="relative flex items-center justify-between gap-2">
           <Select value={s.currentTravelerId} onValueChange={(v) => s.set("currentTravelerId", v)}>
             <SelectTrigger className="h-8 w-auto gap-2 border-navy-foreground/20 bg-navy-foreground/10 text-xs"><span className="opacity-70">Viewing as</span><SelectValue /></SelectTrigger>
             <SelectContent>{going.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
           </Select>
           <SosButton memberId={me.id} />
         </div>
-        <p className="mt-4 text-sm opacity-80">Hi {me.name.split(" ")[0]} 👋</p>
-        <h1 className="text-2xl font-extrabold tracking-tight">{s.trip.title}</h1>
-        <p className="flex items-center gap-1 text-sm opacity-80"><MapPin className="h-3.5 w-3.5" /> {s.trip.destination} · Nov 12–16</p>
+        <p className="relative mt-16 text-sm opacity-85">Hi {me.name.split(" ")[0]} 👋</p>
+        <h1 className="relative text-2xl font-extrabold tracking-tight">{s.trip.title}</h1>
+        <p className="relative flex items-center gap-1 text-sm opacity-85"><MapPin className="h-3.5 w-3.5" /> {s.trip.destination} · Nov 12–16</p>
       </div>
-      <div className="px-4 pt-4">
+      <div className="relative -mt-5 rounded-t-[1.75rem] bg-background px-4 pt-5">
         {tab === "trip" && <TripView />}
         {tab === "tickets" && <TicketsView meId={me.id} />}
         {tab === "extras" && <ExtrasView meId={me.id} />}
@@ -202,7 +205,7 @@ function ExtrasView({ meId }: { meId: string }) {
           <Card key={x.id} className="overflow-hidden shadow-card">
             <img src={addonImages[x.image] ?? addonImages["default"]} alt={x.title} loading="lazy" width={1024} height={656} className="h-36 w-full object-cover" />
             <div className="space-y-2 p-4">
-              <div className="flex items-start justify-between"><p className="font-bold">{x.title}</p><p className="text-lg font-extrabold text-sunset">{money(x.price)}</p></div>
+              <div className="flex items-start justify-between"><p className="font-bold">{x.title}</p><p className="text-lg font-extrabold text-primary">{money(x.price)}</p></div>
               <p className="text-sm text-muted-foreground">{x.description}</p>
               <p className="text-xs text-muted-foreground">Book by {new Date(x.cutoff).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</p>
               {mine ? (
@@ -211,7 +214,7 @@ function ExtrasView({ meId }: { meId: string }) {
                   <Badge variant={mine.status === "paid" ? "success" : "warning"}>{mine.status === "paid" ? "Paid" : "Pending confirmation"}</Badge>
                 </div>
               ) : (
-                <Button className="w-full bg-gradient-sunset text-sunset-foreground shadow-glow" disabled={closed} onClick={() => { setPicking(x.id); setMethod(x.methods[0] ?? "cash"); }}>{closed ? "Booking closed" : "Opt-in / Book"}</Button>
+                <Button className="w-full shadow-glow" disabled={closed} onClick={() => { setPicking(x.id); setMethod(x.methods[0] ?? "cash"); }}>{closed ? "Booking closed" : "Opt-in / Book"}</Button>
               )}
             </div>
           </Card>
@@ -256,11 +259,11 @@ function MoneyView({ meId }: { meId: string }) {
       </div>
       {group ? (<>
         <Card className="p-4 shadow-card">
-          <h3 className="mb-2 flex items-center gap-2 font-bold"><HandCoins className="h-4 w-4 text-sunset" /> Balances</h3>
+          <h3 className="mb-2 flex items-center gap-2 font-bold"><HandCoins className="h-4 w-4 text-primary" /> Balances</h3>
           {transfers.length === 0 ? <p className="text-sm text-muted-foreground">Everyone is settled up 🎉</p> : (
             <ul className="space-y-2">{transfers.map((t, i) => (
               <li key={i} className="flex items-center justify-between gap-2 text-sm">
-                <span><b>{n(t.from)}</b> {t.from === meId ? "owe" : "owes"} <b>{n(t.to)}</b> <span className="font-extrabold text-sunset">{money(t.amount)}</span></span>
+                <span><b>{n(t.from)}</b> {t.from === meId ? "owe" : "owes"} <b>{n(t.to)}</b> <span className="font-extrabold text-primary">{money(t.amount)}</span></span>
                 {(t.from === meId || t.to === meId) && <Button size="sm" variant="outline" onClick={() => { settle(group.id, t.from, t.to, t.amount); toast.success("Settlement recorded"); }}>Settle up</Button>}
               </li>
             ))}</ul>

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Wordmark } from "@/components/ws/Brand";
 import { cn } from "@/lib/utils";
+import cover from "@/assets/trip-cover.jpg";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>) => ({ plan: typeof s["plan"] === "string" ? s["plan"] : undefined }),
@@ -60,21 +61,23 @@ function AuthPage() {
   };
 
   return (
-    <main className="min-h-dvh bg-lagoon-deep text-navy-foreground lg:grid lg:grid-cols-[1fr_minmax(28rem,36rem)]">
-      <section className="latitudes pt-safe relative flex flex-col px-5 pb-10 sm:px-10 lg:min-h-dvh lg:pb-12">
-        <div className="flex h-16 items-center">
+    <main className="min-h-dvh bg-background text-white lg:grid lg:grid-cols-[1fr_minmax(28rem,36rem)]">
+      <section className="pt-safe relative flex flex-col overflow-hidden px-5 pb-14 sm:px-10 lg:m-3 lg:min-h-[calc(100dvh-1.5rem)] lg:rounded-[2.5rem] lg:pb-12">
+        <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/70" />
+        <div className="relative flex h-16 items-center">
           <Link to="/" aria-label="WanderSync home"><Wordmark /></Link>
         </div>
-        <div className="mt-6 max-w-lg lg:my-auto">
+        <div className="relative mt-10 max-w-lg lg:mb-0 lg:mt-auto">
           <h1 className="rise font-display text-[clamp(2.1rem,5vw,3.75rem)] font-bold leading-[1] tracking-[-0.03em]">
             {mode === "up" ? "Your next group trip starts here." : "Welcome back."}
           </h1>
-          <p className="rise mt-4 text-lg text-navy-foreground/75" style={{ "--d": "120ms" } as React.CSSProperties}>
+          <p className="rise mt-4 text-lg text-white/85" style={{ "--d": "120ms" } as React.CSSProperties}>
             {mode === "up" ? "Create an account to start your company's free trial, plan a trip for friends, or join the team that invited you." : "Sign in to see your trips, tickets and team."}
           </p>
         </div>
       </section>
-      <section className="pb-safe rounded-t-[2rem] bg-background text-foreground lg:grid lg:place-items-center lg:rounded-none">
+      <section className="pb-safe relative -mt-6 rounded-t-[2rem] bg-background text-foreground lg:mt-0 lg:grid lg:place-items-center lg:rounded-none">
         <div className="mx-auto w-full max-w-sm px-5 py-8 sm:py-10">
           {sent ? (
             <div className="rounded-2xl bg-secondary p-5">

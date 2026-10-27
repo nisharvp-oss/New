@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { statusLabel, type CompanyStatus } from "@/lib/subscription";
+import cover from "@/assets/trip-cover.jpg";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Your workspace — WanderSync" }, { name: "description", content: "Your WanderSync companies and admin tools." }] }),
@@ -108,15 +109,16 @@ function Dashboard() {
           <div className="no-scrollbar -mx-4 mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0">
             {trips.map((t) => (
               <Link key={t.id} to="/trip/$tripId" params={{ tripId: t.id }}
-                className="press relative w-[82%] shrink-0 snap-start overflow-hidden rounded-3xl bg-navy p-5 text-navy-foreground shadow-card sm:w-auto">
-                <div className="flex items-start justify-between gap-3">
-                  <span className="rounded-full bg-navy-foreground/10 px-2.5 py-1 text-xs font-semibold">{t.as}</span>
-                  <ArrowRight className="h-5 w-5 text-navy-foreground/60" />
+                className="press w-[82%] shrink-0 snap-start overflow-hidden rounded-3xl bg-card shadow-card sm:w-auto">
+                <div className="relative h-36">
+                  <img src={cover} alt="" className="h-full w-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold">{t.as}</span>
+                  <p className="absolute bottom-3 left-4 right-4 truncate text-xl font-extrabold text-white">{t.title}</p>
                 </div>
-                <p className="mt-6 font-display text-2xl font-semibold leading-tight">{t.title}</p>
-                <div className="mt-4 flex items-end justify-between gap-3 border-t border-dashed border-navy-foreground/20 pt-3 text-sm">
-                  <span className="flex min-w-0 items-center gap-1 text-navy-foreground/75"><MapPin className="h-4 w-4 shrink-0" /><span className="truncate">{t.destination}</span></span>
-                  <span className="shrink-0 font-board text-xs text-sunset">{t.start_date ?? "Dates TBC"}</span>
+                <div className="flex items-center justify-between gap-3 p-4 text-sm">
+                  <span className="flex min-w-0 items-center gap-1 text-muted-foreground"><MapPin className="h-4 w-4 shrink-0" /><span className="truncate">{t.destination || "Destination TBC"}</span></span>
+                  <span className="shrink-0 rounded-lg bg-accent px-2 py-1 text-xs font-semibold text-primary">{t.start_date ?? "Dates TBC"}</span>
                 </div>
               </Link>
             ))}
@@ -184,8 +186,8 @@ function Dashboard() {
       </section>
 
       {memberships.isSuccess && !ownsOne && (
-        <section className="mt-10 rounded-3xl bg-navy p-6 text-navy-foreground sm:p-8">
-          <Building2 className="h-7 w-7 text-sunset" />
+        <section className="mt-10 rounded-3xl bg-primary p-6 text-primary-foreground sm:p-8">
+          <Building2 className="h-7 w-7 text-primary-foreground/80" />
           <h2 className="mt-4 text-2xl font-bold">Set up your travel company</h2>
           <p className="mt-2 text-navy-foreground/75">This starts your free trial. If a company invited you, ask the owner to invite <b className="text-navy-foreground">{user.email}</b>, then reopen this page.</p>
           <form onSubmit={create} className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -193,7 +195,7 @@ function Dashboard() {
               <Label htmlFor="company" className="text-navy-foreground/80">Company name</Label>
               <Input id="company" className="h-12 rounded-xl border-navy-foreground/20 bg-navy-foreground/10 text-navy-foreground placeholder:text-navy-foreground/40" placeholder="e.g. Atlas Group Tours" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
-            <Button size="lg" className="bg-sunset text-sunset-foreground hover:bg-sunset/90">Start free trial</Button>
+            <Button size="lg" className="bg-white text-primary hover:bg-white/90">Start free trial</Button>
           </form>
         </section>
       )}

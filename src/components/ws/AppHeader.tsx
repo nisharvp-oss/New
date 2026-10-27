@@ -45,7 +45,7 @@ export function AppHeader() {
               <Button size="sm" variant="ghost" className="hidden text-navy-foreground hover:bg-navy-foreground/10 hover:text-navy-foreground md:inline-flex" onClick={signOut}>Sign out</Button>
             </>
           ) : (
-            <Button size="sm" className="bg-sunset text-sunset-foreground hover:bg-sunset/90" asChild><Link to="/auth" search={{ plan: undefined }}>Sign in</Link></Button>
+            <Button size="sm" className="rounded-full px-4" asChild><Link to="/auth" search={{ plan: undefined }}>Sign in</Link></Button>
           )}
         </nav>
       </div>

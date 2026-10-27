@@ -30,10 +30,10 @@ WanderSync is a multi-tenant group-travel SaaS:
 
 ## Design system & app shell
 - Mobile-first, installable app (PWA manifest in `public/manifest.webmanifest`, safe-area insets via `pt-safe`/`pb-safe`/`pb-tabbar`).
-- Palette tokens in `src/styles.css`: lagoon ink (`navy`, `lagoon-deep`), signal amber (`sunset`), sea glass (`primary`), flare red (`destructive`). Departures-board tokens: `board*`.
-- Type: Bricolage Grotesque (`font-display`, headings), Onest (body), Martian Mono (`font-board`, times/codes only).
+- Look: clean white surfaces, one confident blue (`primary`), ink (`navy`) for dark panels, amber (`sunset`) only for ratings. Real photography carries the mood; photo headers use an image plus a dark gradient.
+- Type: Plus Jakarta Sans throughout; tight negative tracking on large headings.
 - Signed-in screens get a bottom tab bar on phones (`MobileTabBar` in `src/components/ws/AppHeader.tsx`); `/` and `/auth` draw their own chrome.
-- Landing motion lives in `src/components/landing/` (split-flap board, scroll-drawn route). Keep it to those two moments and respect `prefers-reduced-motion`.
+- Landing (`src/components/landing/`): `Sections.tsx` holds the sections, `Phone.tsx` the phone frame and app screens, `motion.ts` the scroll engine (Lenis + GSAP ScrollTrigger, loaded client-side only). Animate through data attributes (`data-reveal`, `data-reveal-group`, `data-parallax`, `data-hscroll`/`data-track`, `data-expand`, `data-count`); everything must still read correctly with `prefers-reduced-motion`.
 
 ## Security conventions
 - Roles live in `user_roles` + `has_role()`; never on profiles. First user ever becomes super admin (`handle_new_user`).

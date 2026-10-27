@@ -57,13 +57,13 @@ function CompanyPage() {
 
   return (
     <main>
-      <header className="latitudes bg-lagoon-deep text-navy-foreground">
+      <header className="bg-lagoon-deep text-navy-foreground">
         <div className="mx-auto max-w-6xl px-4 pb-7 pt-4 sm:pb-9">
           <Link to="/dashboard" className="-ml-2 inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-navy-foreground/75 hover:text-navy-foreground"><ArrowLeft className="h-4 w-4" /> My trips</Link>
           <h1 className="rise mt-3 text-[clamp(1.9rem,5vw,2.75rem)] font-bold leading-[1.05]">{personal ? "My personal trips" : c.name}</h1>
           <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
             {personal ? <span className="rounded-full bg-navy-foreground/10 px-2.5 py-1">Personal organiser</span> : <>
-              <span className="rounded-full bg-sunset px-2.5 py-1 text-sunset-foreground">{statusLabel({ ...c, status: c.status as CompanyStatus })}</span>
+              <span className="rounded-full bg-primary px-2.5 py-1 text-primary-foreground">{statusLabel({ ...c, status: c.status as CompanyStatus })}</span>
               {c.plan && <span className="rounded-full bg-navy-foreground/10 px-2.5 py-1">{c.plan.name} plan</span>}
               {myRole && <span className="rounded-full bg-navy-foreground/10 px-2.5 py-1 capitalize">{myRole}</span>}
             </>}

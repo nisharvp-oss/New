@@ -24,6 +24,7 @@ import { emailAnnouncement } from "@/lib/smtp.functions";
 import { StaffCheckins, StaffDocuments, TravelerDocuments } from "@/components/ws/TripOps";
 import { StaffExpenses, TravelerExpenses } from "@/components/ws/TripExpenses";
 import { StaffSponsors, TravelerSponsors } from "@/components/ws/TripSponsors";
+import cover from "@/assets/trip-cover.jpg";
 
 export const Route = createFileRoute("/_authenticated/trip/$tripId")({
   head: () => ({ meta: [{ title: "Trip — WanderSync" }, { name: "description", content: "Trip itinerary, travelers, extras, announcements and safety." }] }),
@@ -56,17 +57,19 @@ function TripPage() {
   const isFree = free.data ?? false;
   return (
     <main>
-      <header className="latitudes bg-lagoon-deep text-navy-foreground">
-        <div className="mx-auto max-w-6xl px-4 pb-7 pt-4 sm:pb-9">
-          <Link to="/dashboard" className="-ml-2 inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-navy-foreground/75 hover:text-navy-foreground"><ArrowLeft className="h-4 w-4" /> My trips</Link>
-          <h1 className="rise mt-3 text-[clamp(1.9rem,5vw,2.75rem)] font-bold leading-[1.05]">{t.title}</h1>
-          <p className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-navy-foreground/75">
+      <header className="relative overflow-hidden text-white">
+        <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/70" />
+        <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-4 sm:pb-14">
+          <Link to="/dashboard" className="-ml-2 inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-white/85 hover:text-white"><ArrowLeft className="h-4 w-4" /> My trips</Link>
+          <h1 className="rise mt-10 text-[clamp(1.9rem,5vw,2.75rem)] font-extrabold leading-[1.05]">{t.title}</h1>
+          <p className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-white/85">
             <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" />{t.destination || "Destination to be confirmed"}</span>
-            <span className="flex items-center gap-1.5 font-board text-xs text-sunset"><CalendarDays className="h-4 w-4" />{t.start_date ?? "TBC"} – {t.end_date ?? "TBC"}</span>
+            <span className="flex items-center gap-1.5 "><CalendarDays className="h-4 w-4" />{t.start_date ?? "TBC"} – {t.end_date ?? "TBC"}</span>
           </p>
         </div>
       </header>
-      <div className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+      <div className="relative mx-auto -mt-6 max-w-6xl space-y-6 rounded-t-[1.75rem] bg-background px-4 py-6">
         {staff.data ? <StaffView tripId={tripId} destination={t.destination} isFree={isFree} unlockRequested={t.unlock_requested} /> : <TravelerView tripId={tripId} destination={t.destination} isFree={isFree} />}
       </div>
     </main>
@@ -76,7 +79,7 @@ function TripPage() {
 function TripSkeleton() {
   return (
     <main aria-busy className="animate-pulse">
-      <div className="h-40 bg-lagoon-deep" />
+      <div className="h-48 bg-muted" />
       <div className="mx-auto max-w-6xl space-y-3 px-4 py-6">
         <div className="h-9 w-2/3 rounded-full bg-muted" />
         <div className="h-28 rounded-2xl bg-muted" />

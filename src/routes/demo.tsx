@@ -314,7 +314,7 @@ function AddonsTab() {
               <div className="flex">
                 <img src={addonImages[a.image] ?? addonImages["default"]} alt={a.title} loading="lazy" width={1024} height={656} className="h-auto w-36 object-cover" />
                 <div className="flex-1 space-y-1 p-4">
-                  <div className="flex items-start justify-between gap-2"><p className="font-bold">{a.title}</p><p className="font-extrabold text-sunset">{money(a.price)}</p></div>
+                  <div className="flex items-start justify-between gap-2"><p className="font-bold">{a.title}</p><p className="font-extrabold text-primary">{money(a.price)}</p></div>
                   <p className="text-sm text-muted-foreground">{a.description}</p>
                   <div className="flex flex-wrap gap-1.5 pt-1">{a.methods.map((m) => <Badge key={m} variant="secondary">{methodLabel[m]}</Badge>)}</div>
                   <div className="flex gap-4 pt-2 text-sm"><span className="flex items-center gap-1"><Users className="h-4 w-4" />{list.length} booked</span><span className="flex items-center gap-1"><DollarSign className="h-4 w-4" />{money(rev)} collected</span></div>

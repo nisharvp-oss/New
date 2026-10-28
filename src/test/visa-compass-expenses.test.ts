@@ -3,6 +3,7 @@ import { embassySearchUrl, SCHENGEN, SCHENGEN_URL, validateVisaPage, VISA_PAGES,
 import { bearing, cardinal, headingFrom, unwrap } from "@/lib/compass";
 import { budgetStatus, byDay, totalsByCurrency, type MyExpense } from "@/lib/my-expenses";
 import { shrinkToFit, SHRINK_STEPS } from "@/lib/image-upload";
+import { convert, isStale, parseRates, rate, totalIn } from "@/lib/fx";
 import { COUNTRY_CODES } from "@/lib/countries";
 
 describe("visa pages", () => {
@@ -76,7 +77,7 @@ describe("my expenses", () => {
   });
 
   it("tracks a budget in its own currency", () => {
-    expect(budgetStatus(list, { amount: 100, currency: "AED" })).toEqual({ spent: 59.75, left: 40.25, over: false, pct: 60 });
+    expect(budgetStatus(list, { amount: 100, currency: "AED" })).toEqual({ spent: 59.75, left: 40.25, over: false, pct: 60, missing: [] });
     expect(budgetStatus(list, { amount: 15, currency: "USD" })).toMatchObject({ over: true, left: -5, pct: 100 });
   });
 });
@@ -98,5 +99,43 @@ describe("receipt shrinking", () => {
 
   it("explains when a photo can't be made small enough", async () => {
     await expect(shrinkToFit(fake(() => 80 * 1024))).rejects.toThrow(/below 50 KB/);
+  });
+});
+
+describe("currency conversion", () => {
+  const rates = parseRates({ date: "2026-10-27", usd: { aed: 3.6725, eur: 0.92, inr: 84, usd: 1, bad: "x", xx: 2 } })!;
+
+  it("reads the feed and ignores junk", () => {
+    expect(rates.date).toBe("2026-10-27");
+    expect(Object.keys(rates.usd).sort()).toEqual(["AED", "EUR", "INR", "USD"]);
+    expect(parseRates({ nope: 1 })).toBeNull();
+    expect(parseRates(null)).toBeNull();
+  });
+
+  it("converts directly and through cross rates", () => {
+    expect(convert(100, "USD", "AED", rates)).toBe(367.25);
+    expect(convert(367.25, "AED", "USD", rates)).toBe(100);
+    expect(convert(50, "EUR", "INR", rates)).toBe(4565.22);
+    expect(convert(10, "AED", "AED", rates)).toBe(10);
+    expect(convert(10, "AED", "ZZZ", rates)).toBeNull();
+    expect(rate("USD", "EUR", rates)).toBeCloseTo(0.92);
+  });
+
+  it("totals mixed currencies in one and lists what it can't convert", () => {
+    expect(totalIn([{ amount: 100, currency: "AED" }, { amount: 20, currency: "USD" }, { amount: 5, currency: "QQQ" }], "AED", rates))
+      .toEqual({ total: 173.45, missing: ["QQQ"] });
+  });
+
+  it("counts other currencies against a budget once rates are known", () => {
+    const list: MyExpense[] = [
+      { id: "1", amount: 100, currency: "AED", category: "food", note: "", spent_on: "2026-10-27", receipt_path: null },
+      { id: "2", amount: 20, currency: "USD", category: "other", note: "", spent_on: "2026-10-27", receipt_path: null },
+    ];
+    expect(budgetStatus(list, { amount: 500, currency: "AED" }, rates)).toEqual({ spent: 173.45, left: 326.55, over: false, pct: 35, missing: [] });
+  });
+
+  it("flags rates older than three days", () => {
+    expect(isStale(rates, new Date("2026-10-28T10:00:00Z"))).toBe(false);
+    expect(isStale(rates, new Date("2026-11-02T10:00:00Z"))).toBe(true);
   });
 });

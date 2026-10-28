@@ -2,6 +2,8 @@
  * "My expenses": what one traveler spends on a trip, for themselves only. Nothing here is shared
  * or split; that is the group expenses tool (splitwise.ts).
  */
+import { totalIn, type Rates } from "@/lib/fx";
+
 export const CATEGORIES = [
   { id: "food", label: "Food & drinks" },
   { id: "transport", label: "Transport" },
@@ -45,11 +47,15 @@ export function byDay(list: MyExpense[]) {
   }));
 }
 
-/** Spending against a budget in the budget's currency; other currencies aren't counted. */
-export function budgetStatus(list: MyExpense[], budget: Budget) {
-  const spent = round2(list.filter((e) => e.currency === budget.currency).reduce((s, e) => s + e.amount, 0));
+/**
+ * Spending against a budget, in the budget's currency. Without rates only that currency counts;
+ * with rates, spending in other currencies is converted (and any the rates lack are listed).
+ */
+export function budgetStatus(list: MyExpense[], budget: Budget, rates?: Rates | null) {
+  const counted = rates ? totalIn(list, budget.currency, rates) : { total: list.filter((e) => e.currency === budget.currency).reduce((s, e) => s + e.amount, 0), missing: [] as string[] };
+  const spent = round2(counted.total);
   const left = round2(budget.amount - spent);
-  return { spent, left, over: left < 0, pct: budget.amount > 0 ? Math.min(100, Math.round((spent / budget.amount) * 100)) : 0 };
+  return { spent, left, over: left < 0, pct: budget.amount > 0 ? Math.min(100, Math.round((spent / budget.amount) * 100)) : 0, missing: counted.missing };
 }
 
 export function formatMoney(amount: number, currency: string) {

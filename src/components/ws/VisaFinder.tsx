@@ -10,10 +10,14 @@ import { useVisaPages } from "@/lib/visa.functions";
 
 const PASSPORT_KEY = "ws:passport";
 
-/** Destination + passport → the destination's official visa page, then sponsored visa agencies. */
-export function VisaFinder() {
+/**
+ * Destination + passport → the destination's official visa page, then sponsored visa agencies.
+ * Inside a trip the destination is fixed, and agencies only show where the trip shows sponsors.
+ */
+export function VisaFinder({ destination, showSponsors = true }: { destination?: string; showSponsors?: boolean } = {}) {
   const pages = useVisaPages();
-  const [dest, setDest] = useState<string | null>(null);
+  const [picked, setDest] = useState<string | null>(null);
+  const dest = destination ?? picked;
   const [passport, setPassport] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,11 +34,13 @@ export function VisaFinder() {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label className="text-xs font-semibold text-muted-foreground">Travelling to</Label>
-          <CountryPicker selected={dest ? [dest] : []} onToggle={setDest} placeholder="Choose destination" />
-        </div>
+      <div className={destination ? "grid gap-3" : "grid gap-3 sm:grid-cols-2"}>
+        {!destination && (
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-muted-foreground">Travelling to</Label>
+            <CountryPicker selected={dest ? [dest] : []} onToggle={setDest} placeholder="Choose destination" />
+          </div>
+        )}
         <div className="space-y-1.5">
           <Label className="text-xs font-semibold text-muted-foreground">My passport</Label>
           <CountryPicker selected={passport ? [passport] : []} onToggle={pickPassport} placeholder="Choose passport" />
@@ -65,12 +71,12 @@ export function VisaFinder() {
                 </div>
               )}
             </div>
-            <SponsorOfferCards kind="visa" country={dest} />
+            {showSponsors && <SponsorOfferCards kind="visa" country={dest} />}
           </div>
         )
       )}
       <p className="text-xs text-muted-foreground">
-        Visa rules depend on your passport and can change. Always confirm on the official page before you book. Agencies marked "Sponsored" are paid listings.
+        Visa rules depend on your passport and can change. Always confirm on the official page before you book.{showSponsors && ' Agencies marked "Sponsored" are paid listings.'}
       </p>
     </div>
   );

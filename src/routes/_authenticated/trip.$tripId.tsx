@@ -26,6 +26,8 @@ import { emailAnnouncement } from "@/lib/smtp.functions";
 import { StaffCheckins, StaffDocuments, TravelerDocuments } from "@/components/ws/TripOps";
 import { StaffExpenses, TravelerExpenses } from "@/components/ws/TripExpenses";
 import { MyExpenses } from "@/components/ws/MyExpenses";
+import { TripEssentials } from "@/components/ws/TripEssentials";
+import { flag } from "@/lib/countries";
 import { StaffSponsors, TravelerSponsors } from "@/components/ws/TripSponsors";
 import { useSiteImages } from "@/lib/site-images.functions";
 
@@ -70,6 +72,8 @@ function TripPage() {
   const t = trip.data;
   const isFree = free.data ?? false;
   const showSponsors = sponsors.data ?? isFree;
+  // destination_country (migration 0017) is newer than the generated types.
+  const country = (t as { destination_country?: string | null }).destination_country ?? null;
   return (
     <main>
       <header className="relative overflow-hidden text-white">
@@ -79,13 +83,13 @@ function TripPage() {
           <Link to="/dashboard" className="-ml-2 inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-white/85 hover:text-white"><ArrowLeft className="h-4 w-4" /> My trips</Link>
           <h1 className="rise mt-10 text-[clamp(1.9rem,5vw,2.75rem)] font-extrabold leading-[1.05]">{t.title}</h1>
           <p className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-white/85">
-            <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" />{t.destination || "Destination to be confirmed"}</span>
+            <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" />{country && <span aria-hidden>{flag(country)}</span>}{t.destination || "Destination to be confirmed"}</span>
             <span className="flex items-center gap-1.5 "><CalendarDays className="h-4 w-4" />{t.start_date ?? "TBC"} – {t.end_date ?? "TBC"}</span>
           </p>
         </div>
       </header>
       <div className="relative mx-auto -mt-6 max-w-6xl space-y-6 rounded-t-[1.75rem] bg-background px-4 py-6">
-        {staff.data ? <StaffView tripId={tripId} destination={t.destination} isFree={isFree} showSponsors={showSponsors} unlockRequested={t.unlock_requested} /> : <TravelerView tripId={tripId} destination={t.destination} showSponsors={showSponsors} />}
+        {staff.data ? <StaffView tripId={tripId} destination={t.destination} country={country} isFree={isFree} showSponsors={showSponsors} unlockRequested={t.unlock_requested} /> : <TravelerView tripId={tripId} destination={t.destination} country={country} showSponsors={showSponsors} />}
       </div>
     </main>
   );
@@ -207,7 +211,7 @@ function FreeTripBanner({ tripId, requested }: { tripId: string; requested: bool
   );
 }
 
-function StaffView({ tripId, destination, isFree, showSponsors, unlockRequested }: { tripId: string; destination: string; isFree: boolean; showSponsors: boolean; unlockRequested: boolean }) {
+function StaffView({ tripId, destination, country, isFree, showSponsors, unlockRequested }: { tripId: string; destination: string; country: string | null; isFree: boolean; showSponsors: boolean; unlockRequested: boolean }) {
   useLive(tripId);
   const sos = useSos(tripId);
   const qc = useQueryClient();
@@ -233,7 +237,7 @@ function StaffView({ tripId, destination, isFree, showSponsors, unlockRequested 
         <TabsList>
           <TabsTrigger value="travelers">Travelers</TabsTrigger><TabsTrigger value="itinerary">Itinerary</TabsTrigger>
           <TabsTrigger value="addons">Add-ons</TabsTrigger><TabsTrigger value="sponsors">Sponsors</TabsTrigger><TabsTrigger value="news">Announcements</TabsTrigger>
-          <TabsTrigger value="tickets">Tickets</TabsTrigger><TabsTrigger value="checkins">Check-ins</TabsTrigger><TabsTrigger value="docs">Documents</TabsTrigger><TabsTrigger value="expenses">Split costs</TabsTrigger><TabsTrigger value="mine">My expenses</TabsTrigger><TabsTrigger value="safety">Safety log</TabsTrigger>
+          <TabsTrigger value="tickets">Tickets</TabsTrigger><TabsTrigger value="checkins">Check-ins</TabsTrigger><TabsTrigger value="docs">Documents</TabsTrigger><TabsTrigger value="expenses">Split costs</TabsTrigger><TabsTrigger value="mine">My expenses</TabsTrigger><TabsTrigger value="essentials">Visa & eSIM</TabsTrigger><TabsTrigger value="safety">Safety log</TabsTrigger>
         </TabsList>
         <TabsContent value="travelers"><StaffTravelers tripId={tripId} /></TabsContent>
         <TabsContent value="itinerary"><StaffItinerary tripId={tripId} /></TabsContent>
@@ -244,6 +248,7 @@ function StaffView({ tripId, destination, isFree, showSponsors, unlockRequested 
         <TabsContent value="docs"><StaffDocuments tripId={tripId} /></TabsContent>
         <TabsContent value="expenses"><StaffExpenses tripId={tripId} /></TabsContent>
         <TabsContent value="mine"><MyExpenses tripId={tripId} /></TabsContent>
+        <TabsContent value="essentials"><TripEssentials tripId={tripId} country={country} destination={destination} canEdit showSponsors={showSponsors} /></TabsContent>
         <TabsContent value="news"><Announcements tripId={tripId} canPost /></TabsContent>
         <TabsContent value="safety">
           <Card className="divide-y">{sos.data?.map((s) => (
@@ -460,7 +465,7 @@ function StaffAddons({ tripId }: { tripId: string }) {
 }
 
 /* ---------- traveler ---------- */
-function TravelerView({ tripId, destination, showSponsors }: { tripId: string; destination: string; showSponsors: boolean }) {
+function TravelerView({ tripId, destination, country, showSponsors }: { tripId: string; destination: string; country: string | null; showSponsors: boolean }) {
   useLive(tripId);
   const itin = useItinerary(tripId);
   const travelers = useTravelers(tripId);
@@ -471,12 +476,13 @@ function TravelerView({ tripId, destination, showSponsors }: { tripId: string; d
     <>
       {me && <SosButton tripId={tripId} name={me.name} phone={me.phone} />}
       <Tabs defaultValue="plan">
-        <TabsList><TabsTrigger value="plan">Schedule</TabsTrigger><TabsTrigger value="tickets">Tickets</TabsTrigger><TabsTrigger value="docs">Documents</TabsTrigger><TabsTrigger value="expenses">Split costs</TabsTrigger><TabsTrigger value="mine">My expenses</TabsTrigger><TabsTrigger value="extras">Extras</TabsTrigger>{showSponsors && <TabsTrigger value="sponsors">Sponsors & nearby</TabsTrigger>}<TabsTrigger value="news">News</TabsTrigger><TabsTrigger value="me">My details</TabsTrigger></TabsList>
+        <TabsList><TabsTrigger value="plan">Schedule</TabsTrigger><TabsTrigger value="tickets">Tickets</TabsTrigger><TabsTrigger value="docs">Documents</TabsTrigger><TabsTrigger value="expenses">Split costs</TabsTrigger><TabsTrigger value="mine">My expenses</TabsTrigger><TabsTrigger value="essentials">Visa & eSIM</TabsTrigger><TabsTrigger value="extras">Extras</TabsTrigger>{showSponsors && <TabsTrigger value="sponsors">Sponsors & nearby</TabsTrigger>}<TabsTrigger value="news">News</TabsTrigger><TabsTrigger value="me">My details</TabsTrigger></TabsList>
         <TabsContent value="plan"><ItineraryList items={itin.data ?? []} /></TabsContent>
         <TabsContent value="tickets">{me ? <MyTickets travelerId={me.id} /> : null}</TabsContent>
         <TabsContent value="docs">{me ? <TravelerDocuments tripId={tripId} travelerId={me.id} /> : null}</TabsContent>
         <TabsContent value="expenses">{me ? <TravelerExpenses tripId={tripId} travelerId={me.id} /> : null}</TabsContent>
         <TabsContent value="mine"><MyExpenses tripId={tripId} /></TabsContent>
+        <TabsContent value="essentials"><TripEssentials tripId={tripId} country={country} destination={destination} canEdit={false} showSponsors={showSponsors} /></TabsContent>
         <TabsContent value="extras">{me ? <TravelerExtras tripId={tripId} travelerId={me.id} /> : null}</TabsContent>
         {showSponsors && <TabsContent value="sponsors"><TravelerSponsors tripId={tripId} destination={destination} /></TabsContent>}
         <TabsContent value="news"><Announcements tripId={tripId} canPost={false} /></TabsContent>

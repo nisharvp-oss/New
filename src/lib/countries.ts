@@ -25,3 +25,39 @@ export function searchCountries(query: string, list: Country[] = COUNTRIES): Cou
     .filter((c) => c.code.toLowerCase() === q || c.name.toLowerCase().includes(q))
     .sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
 }
+
+/** Common short names and popular trip cities that don't contain their country's name. */
+const ALIASES: Record<string, string> = {
+  uae: "AE", emirates: "AE", dubai: "AE", "abu dhabi": "AE", sharjah: "AE", "ras al khaimah": "AE",
+  ksa: "SA", riyadh: "SA", jeddah: "SA", makkah: "SA", mecca: "SA", medina: "SA", madinah: "SA", alula: "SA",
+  doha: "QA", muscat: "OM", salalah: "OM", manama: "BH", amman: "JO", petra: "JO", cairo: "EG", luxor: "EG", "sharm el sheikh": "EG",
+  istanbul: "TR", cappadocia: "TR", antalya: "TR", baku: "AZ", tbilisi: "GE",
+  uk: "GB", england: "GB", scotland: "GB", wales: "GB", britain: "GB", london: "GB", edinburgh: "GB",
+  usa: "US", america: "US", "new york": "US", "los angeles": "US", "las vegas": "US", orlando: "US",
+  paris: "FR", rome: "IT", venice: "IT", milan: "IT", barcelona: "ES", madrid: "ES", amsterdam: "NL", lisbon: "PT",
+  zurich: "CH", geneva: "CH", interlaken: "CH", vienna: "AT", prague: "CZ", athens: "GR", santorini: "GR",
+  bali: "ID", jakarta: "ID", bangkok: "TH", phuket: "TH", "kuala lumpur": "MY", langkawi: "MY", hanoi: "VN",
+  tokyo: "JP", kyoto: "JP", osaka: "JP", seoul: "KR", beijing: "CN", shanghai: "CN",
+  delhi: "IN", mumbai: "IN", goa: "IN", kerala: "IN", jaipur: "IN", colombo: "LK", male: "MV", kathmandu: "NP",
+  nairobi: "KE", "masai mara": "KE", zanzibar: "TZ", "cape town": "ZA", marrakech: "MA", marrakesh: "MA",
+  sydney: "AU", melbourne: "AU", auckland: "NZ", toronto: "CA", vancouver: "CA",
+};
+
+const plain = (s: string) => ` ${s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z]+/g, " ").trim()} `;
+
+/**
+ * Best guess at the country of a free-text destination like "Dubai, UAE" or "Paris & Rome":
+ * the first country name, alias or known city it mentions, or null.
+ */
+export function guessCountry(destination: string): string | null {
+  const text = plain(destination);
+  if (!text.trim()) return null;
+  let best: { code: string; at: number; len: number } | null = null;
+  const consider = (word: string, code: string) => {
+    const at = text.indexOf(` ${plain(word).trim()} `);
+    if (at >= 0 && (!best || at < best.at || (at === best.at && word.length > best.len))) best = { code, at, len: word.length };
+  };
+  for (const c of COUNTRIES) consider(c.name, c.code);
+  for (const [word, code] of Object.entries(ALIASES)) consider(word, code);
+  return (best as { code: string } | null)?.code ?? null;
+}

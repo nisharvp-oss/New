@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CountryPicker } from "@/components/ws/CountryPicker";
+import { guessCountry } from "@/lib/countries";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -137,6 +139,8 @@ function Trips({ company, team, canEdit, isOwner }: { company: Company; team: Te
 function TripDialog({ companyId, team }: { companyId: string; team: TeamRow[] }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [country, setCountry] = useState<string | null>(null);
+  const [countryTouched, setCountryTouched] = useState(false);
   const [f, setF] = useState({ title: "", destination: "", description: "", start_date: "", end_date: "", price: "", seats: "", organiser_id: "", caretaker_id: "" });
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,6 +149,8 @@ function TripDialog({ companyId, team }: { companyId: string; team: TeamRow[] })
       start_date: f.start_date || null, end_date: f.end_date || null,
       price: f.price ? Number(f.price) : null, seats: f.seats ? Number(f.seats) : null,
       organiser_id: f.organiser_id || null, caretaker_id: f.caretaker_id || null,
+      // destination_country (migration 0017) is newer than the generated types.
+      ...(country ? ({ destination_country: country } as object) : {}),
     });
     if (error) { toast.error(error.message); return; }
     toast.success("Trip created");
@@ -164,7 +170,8 @@ function TripDialog({ companyId, team }: { companyId: string; team: TeamRow[] })
         <DialogHeader><DialogTitle>New trip</DialogTitle></DialogHeader>
         <form onSubmit={save} className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2"><Label>Title</Label><Input required value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} /></div>
-          <div className="sm:col-span-2"><Label>Destination</Label><Input value={f.destination} onChange={(e) => setF({ ...f, destination: e.target.value })} /></div>
+          <div><Label>Destination</Label><Input placeholder="e.g. Dubai & Abu Dhabi" value={f.destination} onChange={(e) => { setF({ ...f, destination: e.target.value }); if (!countryTouched) setCountry(guessCountry(e.target.value)); }} /></div>
+          <div><Label>Country</Label><CountryPicker selected={country ? [country] : []} onToggle={(c) => { setCountry(c); setCountryTouched(true); }} placeholder="For visa & eSIM help" className="mt-0 h-10 rounded-md px-3 text-sm" /></div>
           <div><Label>Start</Label><Input type="date" value={f.start_date} onChange={(e) => setF({ ...f, start_date: e.target.value })} /></div>
           <div><Label>End</Label><Input type="date" value={f.end_date} onChange={(e) => setF({ ...f, end_date: e.target.value })} /></div>
           <div><Label>Price per person ($)</Label><Input type="number" value={f.price} onChange={(e) => setF({ ...f, price: e.target.value })} /></div>

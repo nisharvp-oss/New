@@ -120,6 +120,13 @@
       "when": 1793119353118,
       "tag": "0016_my_expenses_receipts",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793119953118,
+      "tag": "0017_trip_destination_country",
+      "breakpoints": true
     }
   ]
 }

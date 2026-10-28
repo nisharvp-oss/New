@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { googleTranslateUrl, LANGUAGES, PHRASEBOOK, PHRASES, phrasebookLanguages } from "@/lib/translate";
 import { offersFor, validateOffer, type SponsorOffer } from "@/lib/sponsor-offers";
-import { COUNTRIES, countryName, flag, searchCountries } from "@/lib/countries";
+import { COUNTRIES, countryName, flag, guessCountry, searchCountries } from "@/lib/countries";
 
 describe("translate", () => {
   it("builds a Google Translate link with the text filled in", () => {
@@ -45,5 +45,18 @@ describe("eSIM offers", () => {
       .toEqual({ value: { provider: "Airalo", headline: "", url: "https://airalo.com/x", countries: ["AE", "SA"] }, error: null });
     expect(validateOffer({ provider: "", headline: "", url: "https://a.com", countries: [] }).error).toMatch(/name/);
     expect(validateOffer({ provider: "A", headline: "", url: "http://a.com", countries: [] }).error).toMatch(/https/);
+  });
+});
+
+describe("guessCountry", () => {
+  it("finds the country from a trip's destination text", () => {
+    expect(guessCountry("Dubai, UAE")).toBe("AE");
+    expect(guessCountry("Paris & Rome")).toBe("FR");
+    expect(guessCountry("Bali, Indonesia")).toBe("ID");
+    expect(guessCountry("Cape Town")).toBe("ZA");
+    expect(guessCountry("Japan cherry blossom tour")).toBe("JP");
+    expect(guessCountry("Malé, Maldives")).toBe("MV");
+    expect(guessCountry("")).toBeNull();
+    expect(guessCountry("Somewhere sunny")).toBeNull();
   });
 });

@@ -52,10 +52,21 @@ function TripPage() {
   const { tripId } = Route.useParams();
   const { trip, staff } = useTripData(tripId);
   const free = useQuery({ queryKey: ["trip-free", tripId], queryFn: async () => (await must(supabase.rpc("trip_is_free", { _trip: tripId }))) ?? false });
+  // Sponsors show on free trips and on plans that aren't ad-free (trip_shows_sponsors, migration 0012);
+  // before that migration is applied, fall back to free trips only.
+  const sponsors = useQuery({
+    queryKey: ["trip-sponsors-visible", tripId],
+    queryFn: async () => {
+      const rpc = supabase.rpc as unknown as (fn: string, args: { _trip: string }) => PromiseLike<{ data: boolean | null; error: unknown }>;
+      const { data, error } = await rpc("trip_shows_sponsors", { _trip: tripId });
+      return error ? null : !!data;
+    },
+  });
   if (trip.isLoading || staff.isLoading) return <TripSkeleton />;
   if (!trip.data) return <p className="p-10 text-center">This trip doesn't exist, or your account isn't on it. Ask the organiser to invite your email.</p>;
   const t = trip.data;
   const isFree = free.data ?? false;
+  const showSponsors = sponsors.data ?? isFree;
   return (
     <main>
       <header className="relative overflow-hidden text-white">
@@ -71,7 +82,7 @@ function TripPage() {
         </div>
       </header>
       <div className="relative mx-auto -mt-6 max-w-6xl space-y-6 rounded-t-[1.75rem] bg-background px-4 py-6">
-        {staff.data ? <StaffView tripId={tripId} destination={t.destination} isFree={isFree} unlockRequested={t.unlock_requested} /> : <TravelerView tripId={tripId} destination={t.destination} isFree={isFree} />}
+        {staff.data ? <StaffView tripId={tripId} destination={t.destination} isFree={isFree} showSponsors={showSponsors} unlockRequested={t.unlock_requested} /> : <TravelerView tripId={tripId} destination={t.destination} showSponsors={showSponsors} />}
       </div>
     </main>
   );
@@ -193,7 +204,7 @@ function FreeTripBanner({ tripId, requested }: { tripId: string; requested: bool
   );
 }
 
-function StaffView({ tripId, destination, isFree, unlockRequested }: { tripId: string; destination: string; isFree: boolean; unlockRequested: boolean }) {
+function StaffView({ tripId, destination, isFree, showSponsors, unlockRequested }: { tripId: string; destination: string; isFree: boolean; showSponsors: boolean; unlockRequested: boolean }) {
   useLive(tripId);
   const sos = useSos(tripId);
   const qc = useQueryClient();
@@ -224,7 +235,7 @@ function StaffView({ tripId, destination, isFree, unlockRequested }: { tripId: s
         <TabsContent value="travelers"><StaffTravelers tripId={tripId} /></TabsContent>
         <TabsContent value="itinerary"><StaffItinerary tripId={tripId} /></TabsContent>
         <TabsContent value="addons"><StaffAddons tripId={tripId} /></TabsContent>
-        <TabsContent value="sponsors"><StaffSponsors tripId={tripId} destination={destination} isFree={isFree} /></TabsContent>
+        <TabsContent value="sponsors"><StaffSponsors tripId={tripId} destination={destination} isFree={showSponsors} /></TabsContent>
         <TabsContent value="tickets"><StaffTickets tripId={tripId} /></TabsContent>
         <TabsContent value="checkins"><StaffCheckins tripId={tripId} /></TabsContent>
         <TabsContent value="docs"><StaffDocuments tripId={tripId} /></TabsContent>
@@ -445,7 +456,7 @@ function StaffAddons({ tripId }: { tripId: string }) {
 }
 
 /* ---------- traveler ---------- */
-function TravelerView({ tripId, destination, isFree }: { tripId: string; destination: string; isFree: boolean }) {
+function TravelerView({ tripId, destination, showSponsors }: { tripId: string; destination: string; showSponsors: boolean }) {
   useLive(tripId);
   const itin = useItinerary(tripId);
   const travelers = useTravelers(tripId);
@@ -456,13 +467,13 @@ function TravelerView({ tripId, destination, isFree }: { tripId: string; destina
     <>
       {me && <SosButton tripId={tripId} name={me.name} phone={me.phone} />}
       <Tabs defaultValue="plan">
-        <TabsList><TabsTrigger value="plan">Schedule</TabsTrigger><TabsTrigger value="tickets">Tickets</TabsTrigger><TabsTrigger value="docs">Documents</TabsTrigger><TabsTrigger value="expenses">Expenses</TabsTrigger><TabsTrigger value="extras">Extras</TabsTrigger>{isFree && <TabsTrigger value="sponsors">Sponsors & nearby</TabsTrigger>}<TabsTrigger value="news">News</TabsTrigger><TabsTrigger value="me">My details</TabsTrigger></TabsList>
+        <TabsList><TabsTrigger value="plan">Schedule</TabsTrigger><TabsTrigger value="tickets">Tickets</TabsTrigger><TabsTrigger value="docs">Documents</TabsTrigger><TabsTrigger value="expenses">Expenses</TabsTrigger><TabsTrigger value="extras">Extras</TabsTrigger>{showSponsors && <TabsTrigger value="sponsors">Sponsors & nearby</TabsTrigger>}<TabsTrigger value="news">News</TabsTrigger><TabsTrigger value="me">My details</TabsTrigger></TabsList>
         <TabsContent value="plan"><ItineraryList items={itin.data ?? []} /></TabsContent>
         <TabsContent value="tickets">{me ? <MyTickets travelerId={me.id} /> : null}</TabsContent>
         <TabsContent value="docs">{me ? <TravelerDocuments tripId={tripId} travelerId={me.id} /> : null}</TabsContent>
         <TabsContent value="expenses">{me ? <TravelerExpenses tripId={tripId} travelerId={me.id} /> : null}</TabsContent>
         <TabsContent value="extras">{me ? <TravelerExtras tripId={tripId} travelerId={me.id} /> : null}</TabsContent>
-        {isFree && <TabsContent value="sponsors"><TravelerSponsors tripId={tripId} destination={destination} /></TabsContent>}
+        {showSponsors && <TabsContent value="sponsors"><TravelerSponsors tripId={tripId} destination={destination} /></TabsContent>}
         <TabsContent value="news"><Announcements tripId={tripId} canPost={false} /></TabsContent>
         <TabsContent value="me">{me ? <MyDetails traveler={me} /> : null}</TabsContent>
       </Tabs>

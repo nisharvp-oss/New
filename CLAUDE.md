@@ -6,7 +6,8 @@ Guide for Claude (or any coding agent) working on this repository. Also read `AG
 WanderSync is a multi-tenant group-travel SaaS:
 - **Super admins** set subscription plans, pricing, trial length, free-trip limits, unlock price, platform SMTP, PayPal/Stripe account details, and manage other admins.
 - **Travel companies** (subscription + trial) have owners, organisers and caretakers; they run trips and set their *own* payment details.
-- **Individual organisers** get a personal space (`companies.kind = 'personal'`): free up to N travelers per trip, then a one-time unlock fee (admin marks paid).
+- **Individual organisers** get a personal space (`companies.kind = 'personal'`): free up to N travelers per trip ("Free Zone"), then a one-time unlock fee per trip up to a cap ("Pay as you go", admin marks paid).
+- **Pricing** (landing page, built by `src/lib/pricing.ts`, tested): Free Zone and Pay as you go come from `platform_settings` (`free_trip_travelers`, `trip_unlock_price`, `trip_unlock_max_travelers`); company plans come from `plans` (trip limits are per year; `ad_free` hides sponsors via `trip_shows_sponsors`; `contact_sales` shows "Contact us" to `sales_email`). Public copy says "Sign up free, no credit card needed", never "free trial".
 - **Travelers** see schedules, tickets (QR), documents/boarding passes, expenses, announcements, SOS.
 - **Sponsors / local businesses** appear on free trips only; premium first, then by distance. Sponsors manage their listing at `/sponsor` (matched by contact email).
 
@@ -16,7 +17,7 @@ WanderSync is a multi-tenant group-travel SaaS:
 - TanStack Start v1 (React 19, Vite 7), file routes in `src/routes` (never edit `src/routeTree.gen.ts`). No react-router.
 - Tailwind v4 via `src/styles.css` semantic tokens; shadcn/ui in `src/components/ui`. No hard-coded colors.
 - Backend: Lovable Cloud (Supabase Postgres + Auth + Storage) with RLS on every table.
-- Server logic: `createServerFn` in `src/lib/*.functions.ts`; runs on Cloudflare Workers (no Node-only libs).
+- Server logic: `createServerFn` in `src/lib/*.functions.ts`; runs on Cloudflare Workers (no Node-only libs). Signed-out reads use `publicServerClient()` (4 s timeout, no retries) and must fall back to defaults.
 - AI: Lovable AI Gateway (`src/lib/ai-itinerary.functions.ts`).
 - Tests: Vitest (`bun run test`).
 

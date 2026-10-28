@@ -133,7 +133,7 @@ export function StaffSponsors({ tripId, destination, isFree }: { tripId: string;
     <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
       <div className="space-y-3">
         <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-          {isFree ? "Travelers see these sponsors on this free trip. Premium sponsors are always shown first." : "This trip is unlocked, so travelers don't see sponsors."}
+          {isFree ? "Travelers see these sponsors on this trip. Premium sponsors are always shown first." : "This trip is ad-free, so travelers don't see sponsors."}
           {" "}Distances are from {destination || "the trip destination"}; travelers see distance from where they are.
         </p>
         <SponsorList list={sponsors.data ?? []} origin={place.data ?? null} onDelete={del} />

@@ -53,7 +53,7 @@ function Dashboard() {
     const { data, error } = await supabase.rpc("create_company", { _name: name, _plan: plan as string });
     if (error) { toast.error(error.message); return; }
     sessionStorage.removeItem("ws-plan");
-    toast.success("Your free trial has started");
+    toast.success("Your company is set up");
     navigate({ to: "/company/$companyId", params: { companyId: data as string } });
   };
 
@@ -190,13 +190,13 @@ function Dashboard() {
         <section className="mt-10 rounded-3xl bg-primary p-6 text-primary-foreground sm:p-8">
           <Building2 className="h-7 w-7 text-primary-foreground/80" />
           <h2 className="mt-4 text-2xl font-bold">Set up your travel company</h2>
-          <p className="mt-2 text-navy-foreground/75">This starts your free trial. If a company invited you, ask the owner to invite <b className="text-navy-foreground">{user.email}</b>, then reopen this page.</p>
+          <p className="mt-2 text-navy-foreground/75">Create a workspace to run trips with your team. If a company invited you, ask the owner to invite <b className="text-navy-foreground">{user.email}</b>, then reopen this page.</p>
           <form onSubmit={create} className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="flex-1 space-y-1.5">
               <Label htmlFor="company" className="text-navy-foreground/80">Company name</Label>
               <Input id="company" className="h-12 rounded-xl border-navy-foreground/20 bg-navy-foreground/10 text-navy-foreground placeholder:text-navy-foreground/40" placeholder="e.g. Atlas Group Tours" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
-            <Button size="lg" className="bg-white text-primary hover:bg-white/90">Start free trial</Button>
+            <Button size="lg" className="bg-white text-primary hover:bg-white/90">Create company</Button>
           </form>
         </section>
       )}

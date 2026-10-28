@@ -14,6 +14,7 @@ import scuba from "@/assets/addon-scuba.jpg";
 import cook from "@/assets/addon-cook.jpg";
 import { Face, HomeScreen, PhoneFrame, SosScreen, SplitScreen, TicketScreen } from "./Phone";
 import { useSiteImages } from "@/lib/site-images.functions";
+import type { Tier } from "@/lib/pricing";
 import { Car as CarArt, CityScene, Ferry, MiniCity, MiniPeaks, MiniSea, MiniSky, MountainScene, Plane as PlaneArt, SeaScene, SkyScene, Train as TrainArt } from "./JourneyArt";
 
 const d = (ms: number) => ({ "--d": `${ms}ms` }) as CSSProperties;
@@ -43,7 +44,7 @@ export function Nav() {
           ) : (
             <>
               <Link to="/auth" search={{ plan: undefined }} className={cn("rounded-lg px-3 py-2", scrolled ? "text-foreground" : "text-white")}>Sign in</Link>
-              <Button size="sm" className="hidden rounded-full px-4 sm:inline-flex" asChild><Link to="/auth" search={{ plan: undefined }}>Start free trial</Link></Button>
+              <Button size="sm" className="hidden rounded-full px-4 sm:inline-flex" asChild><Link to="/auth" search={{ plan: undefined }}>Sign up free</Link></Button>
             </>
           )}
         </nav>
@@ -56,7 +57,7 @@ function Glass({ children, className, style }: { children: ReactNode; className?
   return <div style={style} className={cn("rounded-2xl bg-card/95 p-3 shadow-float ring-1 ring-black/5 backdrop-blur", className)}>{children}</div>;
 }
 
-export function Hero({ trialDays }: { trialDays: number }) {
+export function Hero() {
   const photos = useSiteImages();
   return (
     <section className="relative px-2 pt-2 sm:px-3 sm:pt-3">
@@ -78,9 +79,10 @@ export function Hero({ trialDays }: { trialDays: number }) {
               Plan the itinerary, hand out tickets, check people in, split costs and answer an SOS. One app for your team and everyone on the trip.
             </p>
             <div className="intro mt-8 flex flex-col gap-3 sm:flex-row" style={d(580)}>
-              <Button size="lg" className="rounded-full px-7 shadow-glow" asChild><Link to="/auth" search={{ plan: undefined }}>Start {trialDays}-day free trial <ArrowRight /></Link></Button>
+              <Button size="lg" className="rounded-full px-7 shadow-glow" asChild><Link to="/auth" search={{ plan: undefined }}>Sign up free <ArrowRight /></Link></Button>
               <Button size="lg" variant="ghost" className="rounded-full bg-white/15 px-7 text-white backdrop-blur hover:bg-white/25 hover:text-white" asChild><Link to="/traveler">See the traveler app</Link></Button>
             </div>
+            <p className="intro mt-4 text-sm text-white/75" style={d(660)}>Free to sign up. No credit card needed.</p>
           </div>
           <div className="relative hidden justify-center lg:flex">
             <div data-stop-d="0" className="intro relative" style={d(400)}>
@@ -377,57 +379,47 @@ export function Roles() {
   );
 }
 
-type Plan = { id: string; name: string; description: string | null; price: number; billing_interval: string; max_trips: number | null; max_organisers: number | null; max_travelers_per_trip: number | null; features: string[] };
-
-export function Pricing({ plans, trialDays, freeTravelers, unlockPrice }: { plans: Plan[]; trialDays: number; freeTravelers: number; unlockPrice: number }) {
+export function Pricing({ tiers }: { tiers: Tier[] }) {
   return (
     <section id="pricing" className="scroll-mt-20 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        <div className="text-center" data-reveal>
-          <h2 className="text-[clamp(2rem,4.6vw,3.5rem)] font-extrabold leading-[1.05] tracking-[-0.03em]">Simple pricing</h2>
-          <p className="mt-3 text-lg text-muted-foreground">Every company plan starts with a {trialDays}-day free trial. No card needed.</p>
+        <div className="mx-auto max-w-2xl text-center" data-reveal>
+          <h2 className="text-[clamp(2rem,4.6vw,3.5rem)] font-extrabold leading-[1.05] tracking-[-0.03em]">Free to start. Pay only when you grow.</h2>
+          <p className="mt-3 text-lg text-muted-foreground">Sign up free, no credit card needed. Every plan includes every feature.</p>
         </div>
-        {plans.length > 0 ? (
-          <div className="mt-12 grid gap-5 md:grid-cols-3" data-reveal-group>
-            {plans.map((p, i) => {
-              const featured = plans.length > 2 && i === 1;
-              return (
-                <div key={p.id} className={cn("relative flex flex-col rounded-[2rem] p-7", featured ? "bg-primary text-primary-foreground shadow-glow" : "border bg-card")}>
-                  {featured && <span className="absolute right-6 top-6 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">Most popular</span>}
-                  <h3 className="text-xl font-bold">{p.name}</h3>
-                  <p className={cn("mt-1 text-sm", featured ? "text-primary-foreground/80" : "text-muted-foreground")}>{p.description}</p>
-                  <p className="mt-6 text-5xl font-extrabold tracking-[-0.03em]">${Number(p.price).toFixed(0)}<span className={cn("ml-1 text-base font-medium", featured ? "text-primary-foreground/80" : "text-muted-foreground")}>/ {p.billing_interval}</span></p>
-                  <ul className="mt-6 flex-1 space-y-3 text-sm">
-                    {[`${p.max_trips ?? "Unlimited"} trips`, `${p.max_organisers ?? "Unlimited"} organisers`, `${p.max_travelers_per_trip ?? "Unlimited"} travelers per trip`, ...p.features].map((f) => (
-                      <li key={f} className="flex gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0" />{f}</li>
-                    ))}
-                  </ul>
-                  <Button size="lg" className={cn("mt-8 w-full rounded-full", featured && "bg-white text-primary hover:bg-white/90")} variant={featured ? "default" : "outline"} asChild>
-                    <Link to="/auth" search={{ plan: p.id }}>Start free trial</Link>
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="mx-auto mt-10 max-w-xl rounded-2xl border bg-card p-6 text-center text-muted-foreground" data-reveal>Plans couldn't load right now. Start your free trial and choose a plan from your workspace.</p>
-        )}
-        <div className="mt-5 flex flex-col gap-5 rounded-[2rem] border bg-card p-7 sm:flex-row sm:items-center sm:justify-between" data-reveal>
-          <div className="flex items-center gap-4">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-accent text-primary"><Users className="h-5 w-5" /></span>
-            <div>
-              <p className="text-lg font-bold">Organising a trip for friends or family?</p>
-              <p className="text-muted-foreground">Free for up to {freeTravelers} travelers. Bigger trips are a one-time ${unlockPrice.toFixed(0)} per trip.</p>
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5" data-reveal-group>
+          {tiers.map((t) => (
+            <div key={t.key} className={cn("relative flex flex-col rounded-[1.75rem] p-6", t.highlight ? "bg-primary text-primary-foreground shadow-glow" : "border bg-card")}>
+              {t.badge && <span className={cn("absolute right-5 top-5 rounded-full px-2.5 py-1 text-xs font-semibold", t.highlight ? "bg-white/20" : "bg-accent text-primary")}>{t.badge}</span>}
+              <h3 className="text-lg font-bold">{t.name}</h3>
+              <p className={cn("mt-1 min-h-10 text-sm", t.highlight ? "text-primary-foreground/80" : "text-muted-foreground")}>{t.blurb}</p>
+              {t.price ? (
+                <p className="mt-5 text-4xl font-extrabold tracking-[-0.03em]">{t.price}<span className={cn("ml-1.5 text-sm font-medium", t.highlight ? "text-primary-foreground/80" : "text-muted-foreground")}>{t.per}</span></p>
+              ) : (
+                <p className="mt-5 text-2xl font-extrabold leading-10 tracking-[-0.02em]">Let's talk</p>
+              )}
+              <ul className="mt-5 flex-1 space-y-2.5 text-sm">
+                {t.points.map((f) => <li key={f} className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0" />{f}</li>)}
+              </ul>
+              {t.cta.kind === "contact" ? (
+                <Button size="lg" variant="outline" className="mt-7 w-full rounded-full" asChild>
+                  <a href={t.cta.email ? `mailto:${t.cta.email}?subject=${encodeURIComponent("WanderSync Enterprise")}` : "#pricing"}>Contact us</a>
+                </Button>
+              ) : (
+                <Button size="lg" className={cn("mt-7 w-full rounded-full", t.highlight && "bg-white text-primary hover:bg-white/90")} variant={t.highlight ? "default" : t.key === "free" ? "default" : "outline"} asChild>
+                  <Link to="/auth" search={{ plan: t.cta.plan }}>{t.key === "free" ? "Sign up free" : t.key === "payg" ? "Start a trip" : `Choose ${t.name}`}</Link>
+                </Button>
+              )}
             </div>
-          </div>
-          <Button size="lg" variant="outline" className="shrink-0 rounded-full" asChild><Link to="/auth" search={{ plan: undefined }}>Plan a trip free</Link></Button>
+          ))}
         </div>
+        <p className="mt-6 text-center text-sm text-muted-foreground" data-reveal>Trip payments from your travelers always go straight to you.</p>
       </div>
     </section>
   );
 }
 
-export function FinalCta({ trialDays }: { trialDays: number }) {
+export function FinalCta() {
   const photos = useSiteImages();
   return (
     <section className="pb-3">
@@ -437,7 +429,7 @@ export function FinalCta({ trialDays }: { trialDays: number }) {
         <div className="relative mx-auto flex min-h-[80svh] max-w-7xl flex-col items-start justify-end px-5 pb-16 text-white sm:px-8 sm:pb-20">
           <h2 className="max-w-3xl text-[clamp(2.4rem,6vw,4.75rem)] font-extrabold leading-[1.02] tracking-[-0.035em]" data-reveal>Your next group trip, without the chaos.</h2>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row" data-reveal>
-            <Button size="lg" className="rounded-full px-7 shadow-glow" asChild><Link to="/auth" search={{ plan: undefined }}>Start {trialDays}-day free trial <ArrowRight /></Link></Button>
+            <Button size="lg" className="rounded-full px-7 shadow-glow" asChild><Link to="/auth" search={{ plan: undefined }}>Sign up free <ArrowRight /></Link></Button>
             <Button size="lg" variant="ghost" className="rounded-full bg-white/15 px-7 text-white backdrop-blur hover:bg-white/25 hover:text-white" asChild><Link to="/demo">Explore a sample trip</Link></Button>
           </div>
         </div>

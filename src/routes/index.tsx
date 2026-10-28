@@ -4,26 +4,35 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef } from "react";
 import { ExtrasGallery, FeatureStory, FinalCta, Footer, Hero, JourneyOverlay, Nav, Pricing, Roles, SplitSection } from "@/components/landing/Sections";
 import { useLandingMotion } from "@/components/landing/motion";
+import { buildPricingTiers, DEFAULT_PLANS, DEFAULT_TERMS, type PlanRow } from "@/lib/pricing";
+
+const PLAN_COLUMNS = "id,name,description,price,billing_interval,max_trips,max_organisers,max_travelers_per_trip,features";
 
 const getPricing = createServerFn({ method: "GET" }).handler(async () => {
-  // The landing page must render even when the backend is unreachable, so failures fall back to no plans.
+  // Pricing must always render: if the backend is unreachable, show the default line-up.
   try {
     const { publicServerClient } = await import("@/lib/public-client.server");
-    const sb = publicServerClient();
-    const [{ data: plans }, { data: trialDays }, { data: terms }] = await Promise.all([
-      sb.from("plans").select("id,name,description,price,billing_interval,max_trips,max_organisers,max_travelers_per_trip,features").eq("is_active", true).order("sort_order"),
-      sb.rpc("get_trial_days"),
-      sb.rpc("free_trip_terms"),
+    // ad_free/contact_sales and public_pricing_terms are newer than the generated types.
+    type Res<T> = PromiseLike<{ data: T | null; error: unknown }>;
+    const sb = publicServerClient() as unknown as {
+      from: (t: "plans") => { select: (c: string) => { eq: (c: string, v: boolean) => { order: (c: string) => Res<PlanRow[]> } } };
+      rpc: (fn: "public_pricing_terms" | "free_trip_terms") => Res<{ free_travelers: number; unlock_price: number; unlock_max_travelers?: number; currency: string; sales_email?: string }[]>;
+    };
+    const activePlans = (cols: string) => sb.from("plans").select(cols).eq("is_active", true).order("sort_order");
+    // Each falls back to the pre-0012 shape when the pricing migration isn't applied yet.
+    const [plans, terms] = await Promise.all([
+      Promise.resolve(activePlans(`${PLAN_COLUMNS},ad_free,contact_sales`)).then((r) => (r.error ? activePlans(PLAN_COLUMNS) : r)),
+      Promise.resolve(sb.rpc("public_pricing_terms")).then((r) => (r.error ? sb.rpc("free_trip_terms") : r)),
     ]);
-    const t = terms?.[0];
+    const t = terms.data?.[0];
     return {
-      plans: plans ?? [],
-      trialDays: (trialDays as number | null) ?? 14,
-      freeTravelers: t?.free_travelers ?? 10,
-      unlockPrice: Number(t?.unlock_price ?? 20),
+      plans: plans.data?.length ? plans.data : DEFAULT_PLANS,
+      terms: t
+        ? { freeTravelers: t.free_travelers, unlockPrice: Number(t.unlock_price), unlockMaxTravelers: t.unlock_max_travelers ?? DEFAULT_TERMS.unlockMaxTravelers, currency: t.currency || "USD", salesEmail: t.sales_email ?? "" }
+        : DEFAULT_TERMS,
     };
   } catch {
-    return { plans: [], trialDays: 14, freeTravelers: 10, unlockPrice: 20 };
+    return { plans: DEFAULT_PLANS, terms: DEFAULT_TERMS };
   }
 });
 const pricingQuery = queryOptions({ queryKey: ["pricing"], queryFn: () => getPricing() });
@@ -34,7 +43,7 @@ export const Route = createFileRoute("/")({
       { title: "WanderSync — Group travel, run from one app" },
       { name: "description", content: "Plan itineraries, issue QR tickets, check travelers in, split shared costs and answer an SOS. One app for travel companies and every traveler on the trip." },
       { property: "og:title", content: "WanderSync — Group travel, run from one app" },
-      { property: "og:description", content: "One app for travel companies and every traveler on the trip. Start a free trial." },
+      { property: "og:description", content: "One app for travel companies and every traveler on the trip. Sign up free, no credit card needed." },
     ],
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(pricingQuery),
@@ -50,15 +59,15 @@ function Landing() {
       <Nav />
       <main>
         <div data-journey className="relative">
-          <Hero trialDays={data.trialDays} />
+          <Hero />
           <FeatureStory />
           <JourneyOverlay />
         </div>
         <SplitSection />
         <ExtrasGallery />
         <Roles />
-        <Pricing plans={data.plans} trialDays={data.trialDays} freeTravelers={data.freeTravelers} unlockPrice={data.unlockPrice} />
-        <FinalCta trialDays={data.trialDays} />
+        <Pricing tiers={buildPricingTiers(data.plans, data.terms)} />
+        <FinalCta />
       </main>
       <Footer />
     </div>

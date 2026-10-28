@@ -74,7 +74,7 @@ function AuthPage() {
             {mode === "up" ? "Your next group trip starts here." : "Welcome back."}
           </h1>
           <p className="rise mt-4 text-lg text-white/85" style={{ "--d": "120ms" } as React.CSSProperties}>
-            {mode === "up" ? "Create an account to start your company's free trial, plan a trip for friends, or join the team that invited you." : "Sign in to see your trips, tickets and team."}
+            {mode === "up" ? "Plan a trip, run your company's trips, or join the team that invited you. Free to sign up, no credit card needed." : "Sign in to see your trips, tickets and team."}
           </p>
         </div>
       </section>

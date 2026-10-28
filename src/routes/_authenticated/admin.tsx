@@ -21,7 +21,8 @@ import { statusLabel, type CompanyStatus } from "@/lib/subscription";
 import { Badge } from "@/components/ui/badge";
 import { AdminSiteImages } from "@/components/ws/AdminSiteImages";
 
-type Plan = Database["public"]["Tables"]["plans"]["Row"];
+// ad_free and contact_sales (migration 0012) are newer than the generated types.
+type Plan = Database["public"]["Tables"]["plans"]["Row"] & { ad_free?: boolean; contact_sales?: boolean };
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async ({ context }) => {
@@ -134,7 +135,7 @@ function PlanCard({ plan }: { plan: Plan }) {
   const num = (v: string) => (v === "" ? null : Number(v));
   const save = async () => {
     const { id, created_at, ...rest } = p;
-    const { error } = await supabase.from("plans").update(rest).eq("id", id);
+    const { error } = await supabase.from("plans").update(rest as Database["public"]["Tables"]["plans"]["Update"]).eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success(`${p.name} saved`);
     qc.invalidateQueries({ queryKey: ["admin-plans"] });
@@ -156,10 +157,12 @@ function PlanCard({ plan }: { plan: Plan }) {
           </Select>
         </div>
         <div className="sm:col-span-4"><Label>Description</Label><Input value={p.description} onChange={(e) => setP({ ...p, description: e.target.value })} /></div>
-        <div><Label>Max trips</Label><Input type="number" placeholder="Unlimited" value={p.max_trips ?? ""} onChange={(e) => setP({ ...p, max_trips: num(e.target.value) })} /></div>
+        <div><Label>Max trips a year</Label><Input type="number" placeholder="Unlimited" value={p.max_trips ?? ""} onChange={(e) => setP({ ...p, max_trips: num(e.target.value) })} /></div>
         <div><Label>Max organisers</Label><Input type="number" placeholder="Unlimited" value={p.max_organisers ?? ""} onChange={(e) => setP({ ...p, max_organisers: num(e.target.value) })} /></div>
         <div><Label>Max travelers / trip</Label><Input type="number" placeholder="Unlimited" value={p.max_travelers_per_trip ?? ""} onChange={(e) => setP({ ...p, max_travelers_per_trip: num(e.target.value) })} /></div>
         <div className="flex items-end gap-2 pb-2"><Switch checked={p.is_active} onCheckedChange={(v) => setP({ ...p, is_active: v })} /><span className="text-sm">Shown on pricing</span></div>
+        <div className="flex items-center gap-2 sm:col-span-2"><Switch checked={!!p.ad_free} onCheckedChange={(v) => setP({ ...p, ad_free: v })} /><span className="text-sm">Ad-free (no sponsors on this plan's trips)</span></div>
+        <div className="flex items-center gap-2 sm:col-span-2"><Switch checked={!!p.contact_sales} onCheckedChange={(v) => setP({ ...p, contact_sales: v })} /><span className="text-sm">Contact us instead of a price (e.g. Enterprise)</span></div>
         <div className="sm:col-span-4"><Label>Features (one per line)</Label><Textarea rows={3} value={p.features.join("\n")} onChange={(e) => setP({ ...p, features: e.target.value.split("\n").filter(Boolean) })} /></div>
       </div>
       <div className="flex gap-2"><Button onClick={save}>Save</Button><Button variant="ghost" onClick={del}><Trash2 className="h-4 w-4" /> Delete</Button></div>
@@ -172,7 +175,15 @@ function Settings() {
   const [days, setDays] = useState(14);
   const [freeN, setFreeN] = useState(10);
   const [price, setPrice] = useState(20);
-  useEffect(() => { if (q.data) { setDays(q.data.trial_days); setFreeN(q.data.free_trip_travelers); setPrice(Number(q.data.trip_unlock_price)); } }, [q.data]);
+  const [maxN, setMaxN] = useState(100);
+  const [salesEmail, setSalesEmail] = useState("");
+  useEffect(() => {
+    if (!q.data) return;
+    // trip_unlock_max_travelers and sales_email (migration 0012) are newer than the generated types.
+    const extra = q.data as typeof q.data & { trip_unlock_max_travelers?: number; sales_email?: string };
+    setDays(q.data.trial_days); setFreeN(q.data.free_trip_travelers); setPrice(Number(q.data.trip_unlock_price));
+    setMaxN(extra.trip_unlock_max_travelers ?? 100); setSalesEmail(extra.sales_email ?? "");
+  }, [q.data]);
   if (!q.data) return null;
   const save = async (patch: Database["public"]["Tables"]["platform_settings"]["Update"], msg: string) => {
     const { error } = await supabase.from("platform_settings").update(patch).eq("id", 1);
@@ -181,15 +192,21 @@ function Settings() {
   return (
     <div className="space-y-4">
       <Card className="flex flex-wrap items-end gap-3 p-6 shadow-card">
-        <div><Label>Free trial length (days)</Label><Input type="number" min={0} className="w-32" value={days} onChange={(e) => setDays(Number(e.target.value))} /></div>
+        <div><Label>Company plan grace period (days)</Label><Input type="number" min={0} className="w-32" value={days} onChange={(e) => setDays(Number(e.target.value))} /></div>
         <Button onClick={() => save({ trial_days: days }, "Trial length saved")}>Save</Button>
-        <p className="w-full text-sm text-muted-foreground">Applies to companies that sign up from now on.</p>
+        <p className="w-full text-sm text-muted-foreground">How long a new company can use its plan before you activate it. Applies to companies that sign up from now on.</p>
       </Card>
       <Card className="flex flex-wrap items-end gap-3 p-6 shadow-card">
-        <div><Label>Free travelers per personal trip</Label><Input type="number" min={1} className="w-32" value={freeN} onChange={(e) => setFreeN(Number(e.target.value))} /></div>
-        <div><Label>One-time unlock price ($)</Label><Input type="number" min={0} className="w-32" value={price} onChange={(e) => setPrice(Number(e.target.value))} /></div>
-        <Button onClick={() => save({ free_trip_travelers: freeN, trip_unlock_price: price }, "Personal trip pricing saved")}>Save</Button>
-        <p className="w-full text-sm text-muted-foreground">Individual organisers get this many travelers free on each trip. Above that they pay once per trip.</p>
+        <div><Label>Free Zone: travelers per trip</Label><Input type="number" min={1} className="w-32" value={freeN} onChange={(e) => setFreeN(Number(e.target.value))} /></div>
+        <div><Label>Pay as you go price ($)</Label><Input type="number" min={0} className="w-32" value={price} onChange={(e) => setPrice(Number(e.target.value))} /></div>
+        <div><Label>Pay as you go: max travelers</Label><Input type="number" min={1} className="w-32" value={maxN} onChange={(e) => setMaxN(Number(e.target.value))} /></div>
+        <Button onClick={() => save({ free_trip_travelers: freeN, trip_unlock_price: price, trip_unlock_max_travelers: maxN } as Database["public"]["Tables"]["platform_settings"]["Update"], "Free Zone and Pay as you go saved")}>Save</Button>
+        <p className="w-full text-sm text-muted-foreground">Free Zone: anyone can run trips of up to this many travelers for free. Pay as you go: a one-time payment per trip lifts that trip to the maximum.</p>
+      </Card>
+      <Card className="flex flex-wrap items-end gap-3 p-6 shadow-card">
+        <div className="min-w-64 flex-1"><Label>Sales email</Label><Input type="email" placeholder="sales@yourcompany.com" value={salesEmail} onChange={(e) => setSalesEmail(e.target.value)} /></div>
+        <Button onClick={() => save({ sales_email: salesEmail.trim() } as Database["public"]["Tables"]["platform_settings"]["Update"], "Sales email saved")}>Save</Button>
+        <p className="w-full text-sm text-muted-foreground">Where "Contact us" on the pricing page sends people, e.g. for Enterprise.</p>
       </Card>
       <SmtpForm companyId={null} initial={q.data} onSave={async (f) => (await supabase.from("platform_settings").update(f).eq("id", 1)).error?.message ?? null} />
     </div>

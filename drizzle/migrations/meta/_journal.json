@@ -85,6 +85,13 @@
       "when": 1793116353118,
       "tag": "0011_site_images",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793116953118,
+      "tag": "0012_pricing_tiers",
+      "breakpoints": true
     }
   ]
 }

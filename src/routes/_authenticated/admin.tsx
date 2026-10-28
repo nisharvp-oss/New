@@ -21,7 +21,8 @@ import { statusLabel, type CompanyStatus } from "@/lib/subscription";
 import { Badge } from "@/components/ui/badge";
 import { AdminSiteImages } from "@/components/ws/AdminSiteImages";
 import { AdminAirlines } from "@/components/ws/AdminAirlines";
-import { AdminEsim } from "@/components/ws/AdminEsim";
+import { AdminSponsorOffers } from "@/components/ws/AdminSponsorOffers";
+import { AdminVisa } from "@/components/ws/AdminVisa";
 
 // ad_free and contact_sales (migration 0012) are newer than the generated types.
 type Plan = Database["public"]["Tables"]["plans"]["Row"] & { ad_free?: boolean; contact_sales?: boolean };
@@ -41,14 +42,15 @@ function Admin() {
     <main className="mx-auto max-w-6xl space-y-6 px-4 py-8">
       <h1 className="text-3xl font-extrabold">Platform admin</h1>
       <Tabs defaultValue="companies">
-        <TabsList><TabsTrigger value="companies">Companies</TabsTrigger><TabsTrigger value="unlocks">Trip unlocks</TabsTrigger><TabsTrigger value="sponsors">Sponsors</TabsTrigger><TabsTrigger value="plans">Plans</TabsTrigger><TabsTrigger value="images">Site images</TabsTrigger><TabsTrigger value="airlines">Airlines</TabsTrigger><TabsTrigger value="esim">eSIM offers</TabsTrigger><TabsTrigger value="settings">Pricing, trial & mail</TabsTrigger><TabsTrigger value="payments">Payment accounts</TabsTrigger><TabsTrigger value="admins">Admins</TabsTrigger></TabsList>
+        <TabsList><TabsTrigger value="companies">Companies</TabsTrigger><TabsTrigger value="unlocks">Trip unlocks</TabsTrigger><TabsTrigger value="sponsors">Sponsors</TabsTrigger><TabsTrigger value="plans">Plans</TabsTrigger><TabsTrigger value="images">Site images</TabsTrigger><TabsTrigger value="airlines">Airlines</TabsTrigger><TabsTrigger value="esim">eSIM offers</TabsTrigger><TabsTrigger value="visa">Visa</TabsTrigger><TabsTrigger value="settings">Pricing, trial & mail</TabsTrigger><TabsTrigger value="payments">Payment accounts</TabsTrigger><TabsTrigger value="admins">Admins</TabsTrigger></TabsList>
         <TabsContent value="companies"><Companies /></TabsContent>
         <TabsContent value="unlocks"><Unlocks /></TabsContent>
         <TabsContent value="sponsors"><Sponsors /></TabsContent>
         <TabsContent value="plans"><Plans /></TabsContent>
         <TabsContent value="images"><AdminSiteImages userId={user.id} /></TabsContent>
         <TabsContent value="airlines"><AdminAirlines /></TabsContent>
-        <TabsContent value="esim"><AdminEsim /></TabsContent>
+        <TabsContent value="esim"><AdminSponsorOffers kind="esim" intro="Sponsored eSIM offers appear in Tools → eSIM when a traveler picks a country the offer covers." /></TabsContent>
+        <TabsContent value="visa"><AdminVisa /></TabsContent>
         <TabsContent value="settings"><Settings /></TabsContent>
         <TabsContent value="payments"><PaymentAccounts /></TabsContent>
         <TabsContent value="admins"><SuperAdmins myId={user.id} /></TabsContent>

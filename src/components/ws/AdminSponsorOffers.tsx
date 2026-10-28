@@ -9,35 +9,36 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { CountryPicker } from "@/components/ws/CountryPicker";
 import { countryName, flag } from "@/lib/countries";
-import { validateEsim, type EsimInput } from "@/lib/esim";
-import { esimFlyerUrl, esimOffersQuery } from "@/lib/esim.functions";
+import { OFFER_KINDS, validateOffer, type OfferInput, type OfferKind } from "@/lib/sponsor-offers";
+import { flyerUrl, sponsorOffersQuery } from "@/lib/sponsor-offers.functions";
 import { prepareImage } from "@/lib/image-upload";
 import { SITE_MEDIA_BUCKET } from "@/lib/site-images";
 
-type Row = EsimInput & { id: string; flyer_path: string | null; is_active: boolean; sort_order: number; clicks: number };
+type Row = OfferInput & { id: string; flyer_path: string | null; is_active: boolean; sort_order: number; clicks: number };
 type Res = PromiseLike<{ data: unknown; error: { message: string } | null }>;
-// esim_offers (migration 0014) is newer than the generated database types; this is the slice we use.
-type EsimTable = {
+// esim_offers (0014) and visa_agencies (0015) are newer than the generated database types; this is the slice we use.
+type OffersTable = {
   select: (c: string) => { order: (c: string) => PromiseLike<{ data: Row[] | null; error: { message: string } | null }> };
-  insert: (row: EsimInput & { flyer_path: string | null; sort_order: number }) => Res;
+  insert: (row: OfferInput & { flyer_path: string | null; sort_order: number }) => Res;
   update: (row: Partial<Row> & { updated_at: string }) => { eq: (c: "id", v: string) => Res };
   delete: () => { eq: (c: "id", v: string) => Res };
 };
-const table = () => (supabase as unknown as { from: (t: "esim_offers") => EsimTable }).from("esim_offers");
-const adminQueryKey = ["admin-esim"];
+const tableFor = (kind: OfferKind) => (supabase as unknown as { from: (t: string) => OffersTable }).from(OFFER_KINDS[kind].table);
 const bucket = () => supabase.storage.from(SITE_MEDIA_BUCKET);
 
-async function uploadFlyer(file: File) {
+async function uploadFlyer(kind: OfferKind, file: File) {
   if (!file.type.startsWith("image/")) throw new Error("Choose an image file");
-  const path = `esim/${Date.now()}.jpg`;
+  const path = `${OFFER_KINDS[kind].folder}/${Date.now()}.jpg`;
   const up = await bucket().upload(path, await prepareImage(file, 1600), { contentType: "image/jpeg", cacheControl: "31536000", upsert: false });
   if (up.error) throw new Error(up.error.message);
   return path;
 }
 
-/** Super admins manage the sponsored eSIM offers behind Tools → eSIM, per destination country. */
-export function AdminEsim() {
+/** Super admins manage sponsored offers (eSIM providers, visa agencies) shown in Tools per destination country. */
+export function AdminSponsorOffers({ kind, intro }: { kind: OfferKind; intro: string }) {
   const qc = useQueryClient();
+  const adminQueryKey = ["admin-offers", kind];
+  const table = () => tableFor(kind);
   const rows = useQuery({
     queryKey: adminQueryKey,
     queryFn: async () => {
@@ -48,49 +49,50 @@ export function AdminEsim() {
   });
   const refresh = () => {
     qc.invalidateQueries({ queryKey: adminQueryKey });
-    qc.invalidateQueries({ queryKey: esimOffersQuery.queryKey });
+    qc.invalidateQueries({ queryKey: sponsorOffersQuery(kind).queryKey });
   };
   const list = rows.data ?? [];
 
   return (
     <div className="space-y-4">
       <p className="max-w-2xl text-sm text-muted-foreground">
-        Sponsored eSIM offers appear in Tools → eSIM when a traveler picks a country the offer covers. Leave countries empty for a worldwide offer; country offers show first. Each flyer opens the sponsor's link, and clicks are counted here. Flyers show at 4:3 (landscape), e.g. 1200 × 900 px.
+        {intro} Leave countries empty for a worldwide sponsor; country sponsors show first. Each flyer opens the sponsor's link, and clicks are counted here. Flyers show at 4:3 (landscape), e.g. 1200 × 900 px.
       </p>
-      <OfferForm key={list.length} nextOrder={(list.at(-1)?.sort_order ?? 0) + 1} onSaved={refresh} />
+      <OfferForm kind={kind} key={list.length} nextOrder={(list.at(-1)?.sort_order ?? 0) + 1} onSaved={refresh} />
       {rows.isLoading ? (
         <div className="h-40 animate-pulse rounded-2xl bg-muted" />
       ) : rows.isError ? (
-        <p className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm">eSIM offers didn't load: {(rows.error as Error).message}. If this is a new install, the eSIM database update may not be applied yet.</p>
+        <p className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm">Sponsors didn't load: {(rows.error as Error).message}. If this is a new install, the database update for this list may not be applied yet.</p>
       ) : list.length === 0 ? (
-        <p className="rounded-2xl border bg-card p-6 text-center text-sm text-muted-foreground">No eSIM offers yet. Add your first sponsor above.</p>
+        <p className="rounded-2xl border bg-card p-6 text-center text-sm text-muted-foreground">No sponsors yet. Add your first one above.</p>
       ) : (
-        <ul className="grid gap-3 lg:grid-cols-2">{list.map((r) => <li key={`${r.id}:${r.flyer_path}`}><OfferForm row={r} onSaved={refresh} /></li>)}</ul>
+        <ul className="grid gap-3 lg:grid-cols-2">{list.map((r) => <li key={`${r.id}:${r.flyer_path}`}><OfferForm kind={kind} row={r} onSaved={refresh} /></li>)}</ul>
       )}
     </div>
   );
 }
 
 /** Adds an offer, or edits one when `row` is given. */
-function OfferForm({ row, nextOrder = 0, onSaved }: { row?: Row; nextOrder?: number; onSaved: () => void }) {
-  const [f, setF] = useState<EsimInput>({ provider: row?.provider ?? "", headline: row?.headline ?? "", url: row?.url ?? "", countries: row?.countries ?? [] });
+function OfferForm({ kind, row, nextOrder = 0, onSaved }: { kind: OfferKind; row?: Row; nextOrder?: number; onSaved: () => void }) {
+  const table = () => tableFor(kind);
+  const [f, setF] = useState<OfferInput>({ provider: row?.provider ?? "", headline: row?.headline ?? "", url: row?.url ?? "", countries: row?.countries ?? [] });
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const local = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
   useEffect(() => () => { if (local) URL.revokeObjectURL(local); }, [local]);
-  const preview = local ?? esimFlyerUrl(row?.flyer_path ?? null);
+  const preview = local ?? flyerUrl(row?.flyer_path ?? null);
   const dirty = !row || file !== null || f.provider !== row.provider || f.headline !== row.headline || f.url !== row.url || f.countries.join() !== row.countries.join();
   const toggle = (c: string) => setF({ ...f, countries: f.countries.includes(c) ? f.countries.filter((x) => x !== c) : [...f.countries, c].sort() });
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { value, error } = validateEsim(f);
+    const { value, error } = validateOffer(f);
     if (error) { toast.error(error); return; }
     setBusy(true);
     let path: string | null = null;
     try {
-      if (file) path = await uploadFlyer(file);
+      if (file) path = await uploadFlyer(kind, file);
       const res = row
         ? await table().update({ ...value, ...(path ? { flyer_path: path } : {}), updated_at: new Date().toISOString() }).eq("id", row.id)
         : await table().insert({ ...value, flyer_path: path, sort_order: nextOrder });
@@ -130,10 +132,10 @@ function OfferForm({ row, nextOrder = 0, onSaved }: { row?: Row; nextOrder?: num
       </div>
       <div className="min-w-0 space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
-          <div><Label className="text-xs" htmlFor={`p-${row?.id ?? "new"}`}>Provider</Label><Input id={`p-${row?.id ?? "new"}`} placeholder="Airalo" value={f.provider} onChange={(e) => setF({ ...f, provider: e.target.value })} /></div>
-          <div><Label className="text-xs" htmlFor={`h-${row?.id ?? "new"}`}>Offer line</Label><Input id={`h-${row?.id ?? "new"}`} placeholder="10% off with WANDER10" value={f.headline} onChange={(e) => setF({ ...f, headline: e.target.value })} /></div>
+          <div><Label className="text-xs" htmlFor={`p-${kind}-${row?.id ?? "new"}`}>Provider</Label><Input id={`p-${kind}-${row?.id ?? "new"}`} placeholder={kind === "visa" ? "Atlas Visa Services" : "Airalo"} value={f.provider} onChange={(e) => setF({ ...f, provider: e.target.value })} /></div>
+          <div><Label className="text-xs" htmlFor={`h-${kind}-${row?.id ?? "new"}`}>Offer line</Label><Input id={`h-${kind}-${row?.id ?? "new"}`} placeholder={kind === "visa" ? "Fast UAE & Schengen visas" : "10% off with WANDER10"} value={f.headline} onChange={(e) => setF({ ...f, headline: e.target.value })} /></div>
         </div>
-        <div><Label className="text-xs" htmlFor={`u-${row?.id ?? "new"}`}>Sponsor link</Label><Input id={`u-${row?.id ?? "new"}`} type="url" placeholder="https://… (your affiliate or sponsor link)" value={f.url} onChange={(e) => setF({ ...f, url: e.target.value })} /></div>
+        <div><Label className="text-xs" htmlFor={`u-${kind}-${row?.id ?? "new"}`}>Sponsor link</Label><Input id={`u-${kind}-${row?.id ?? "new"}`} type="url" placeholder="https://… (your affiliate or sponsor link)" value={f.url} onChange={(e) => setF({ ...f, url: e.target.value })} /></div>
         <div>
           <Label className="text-xs">Countries</Label>
           <CountryPicker multiple selected={f.countries} onToggle={toggle} placeholder="Worldwide (all countries)" className="mt-1 h-11 rounded-xl text-sm" />
@@ -156,7 +158,7 @@ function OfferForm({ row, nextOrder = 0, onSaved }: { row?: Row; nextOrder?: num
               <Button size="icon" variant="ghost" type="button" className="ml-auto" aria-label={`Delete ${row.provider}`} disabled={busy} onClick={remove}><Trash2 /></Button>
             </>
           ) : (
-            <Button disabled={busy}>{busy ? <Smartphone className="animate-pulse" /> : <Plus />} Add eSIM offer</Button>
+            <Button disabled={busy}>{busy ? <Smartphone className="animate-pulse" /> : <Plus />} Add {OFFER_KINDS[kind].noun}</Button>
           )}
         </div>
       </div>

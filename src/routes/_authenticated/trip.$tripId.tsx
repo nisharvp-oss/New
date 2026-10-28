@@ -25,6 +25,7 @@ import { QrScanner } from "@/components/ws/QrScanner";
 import { emailAnnouncement } from "@/lib/smtp.functions";
 import { StaffCheckins, StaffDocuments, TravelerDocuments } from "@/components/ws/TripOps";
 import { StaffExpenses, TravelerExpenses } from "@/components/ws/TripExpenses";
+import { MyExpenses } from "@/components/ws/MyExpenses";
 import { StaffSponsors, TravelerSponsors } from "@/components/ws/TripSponsors";
 import { useSiteImages } from "@/lib/site-images.functions";
 
@@ -232,7 +233,7 @@ function StaffView({ tripId, destination, isFree, showSponsors, unlockRequested 
         <TabsList>
           <TabsTrigger value="travelers">Travelers</TabsTrigger><TabsTrigger value="itinerary">Itinerary</TabsTrigger>
           <TabsTrigger value="addons">Add-ons</TabsTrigger><TabsTrigger value="sponsors">Sponsors</TabsTrigger><TabsTrigger value="news">Announcements</TabsTrigger>
-          <TabsTrigger value="tickets">Tickets</TabsTrigger><TabsTrigger value="checkins">Check-ins</TabsTrigger><TabsTrigger value="docs">Documents</TabsTrigger><TabsTrigger value="expenses">Expenses</TabsTrigger><TabsTrigger value="safety">Safety log</TabsTrigger>
+          <TabsTrigger value="tickets">Tickets</TabsTrigger><TabsTrigger value="checkins">Check-ins</TabsTrigger><TabsTrigger value="docs">Documents</TabsTrigger><TabsTrigger value="expenses">Split costs</TabsTrigger><TabsTrigger value="mine">My expenses</TabsTrigger><TabsTrigger value="safety">Safety log</TabsTrigger>
         </TabsList>
         <TabsContent value="travelers"><StaffTravelers tripId={tripId} /></TabsContent>
         <TabsContent value="itinerary"><StaffItinerary tripId={tripId} /></TabsContent>
@@ -242,6 +243,7 @@ function StaffView({ tripId, destination, isFree, showSponsors, unlockRequested 
         <TabsContent value="checkins"><StaffCheckins tripId={tripId} /></TabsContent>
         <TabsContent value="docs"><StaffDocuments tripId={tripId} /></TabsContent>
         <TabsContent value="expenses"><StaffExpenses tripId={tripId} /></TabsContent>
+        <TabsContent value="mine"><MyExpenses tripId={tripId} /></TabsContent>
         <TabsContent value="news"><Announcements tripId={tripId} canPost /></TabsContent>
         <TabsContent value="safety">
           <Card className="divide-y">{sos.data?.map((s) => (
@@ -469,11 +471,12 @@ function TravelerView({ tripId, destination, showSponsors }: { tripId: string; d
     <>
       {me && <SosButton tripId={tripId} name={me.name} phone={me.phone} />}
       <Tabs defaultValue="plan">
-        <TabsList><TabsTrigger value="plan">Schedule</TabsTrigger><TabsTrigger value="tickets">Tickets</TabsTrigger><TabsTrigger value="docs">Documents</TabsTrigger><TabsTrigger value="expenses">Expenses</TabsTrigger><TabsTrigger value="extras">Extras</TabsTrigger>{showSponsors && <TabsTrigger value="sponsors">Sponsors & nearby</TabsTrigger>}<TabsTrigger value="news">News</TabsTrigger><TabsTrigger value="me">My details</TabsTrigger></TabsList>
+        <TabsList><TabsTrigger value="plan">Schedule</TabsTrigger><TabsTrigger value="tickets">Tickets</TabsTrigger><TabsTrigger value="docs">Documents</TabsTrigger><TabsTrigger value="expenses">Split costs</TabsTrigger><TabsTrigger value="mine">My expenses</TabsTrigger><TabsTrigger value="extras">Extras</TabsTrigger>{showSponsors && <TabsTrigger value="sponsors">Sponsors & nearby</TabsTrigger>}<TabsTrigger value="news">News</TabsTrigger><TabsTrigger value="me">My details</TabsTrigger></TabsList>
         <TabsContent value="plan"><ItineraryList items={itin.data ?? []} /></TabsContent>
         <TabsContent value="tickets">{me ? <MyTickets travelerId={me.id} /> : null}</TabsContent>
         <TabsContent value="docs">{me ? <TravelerDocuments tripId={tripId} travelerId={me.id} /> : null}</TabsContent>
         <TabsContent value="expenses">{me ? <TravelerExpenses tripId={tripId} travelerId={me.id} /> : null}</TabsContent>
+        <TabsContent value="mine"><MyExpenses tripId={tripId} /></TabsContent>
         <TabsContent value="extras">{me ? <TravelerExtras tripId={tripId} travelerId={me.id} /> : null}</TabsContent>
         {showSponsors && <TabsContent value="sponsors"><TravelerSponsors tripId={tripId} destination={destination} /></TabsContent>}
         <TabsContent value="news"><Announcements tripId={tripId} canPost={false} /></TabsContent>

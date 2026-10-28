@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { googleTranslateUrl, LANGUAGES, PHRASEBOOK, PHRASES, phrasebookLanguages } from "@/lib/translate";
-import { offersFor, validateEsim, type EsimOffer } from "@/lib/esim";
+import { offersFor, validateOffer, type SponsorOffer } from "@/lib/sponsor-offers";
 import { COUNTRIES, countryName, flag, searchCountries } from "@/lib/countries";
 
 describe("translate", () => {
@@ -31,7 +31,7 @@ describe("countries", () => {
 });
 
 describe("eSIM offers", () => {
-  const o = (id: string, countries: string[], sort_order = 0): EsimOffer => ({ id, provider: id, headline: "", url: "https://x.com", flyer_url: null, countries, sort_order });
+  const o = (id: string, countries: string[], sort_order = 0): SponsorOffer => ({ id, provider: id, headline: "", url: "https://x.com", flyer_url: null, countries, sort_order });
   const offers = [o("world", []), o("gulf", ["AE", "SA"], 2), o("uae", ["AE"], 1), o("uk", ["GB"])];
 
   it("shows country-specific offers first, then worldwide ones", () => {
@@ -41,9 +41,9 @@ describe("eSIM offers", () => {
   });
 
   it("tidies and checks an admin's offer", () => {
-    expect(validateEsim({ provider: " Airalo ", headline: "", url: "https://airalo.com/x", countries: ["ae", "AE", " sa"] }))
+    expect(validateOffer({ provider: " Airalo ", headline: "", url: "https://airalo.com/x", countries: ["ae", "AE", " sa"] }))
       .toEqual({ value: { provider: "Airalo", headline: "", url: "https://airalo.com/x", countries: ["AE", "SA"] }, error: null });
-    expect(validateEsim({ provider: "", headline: "", url: "https://a.com", countries: [] }).error).toMatch(/provider/);
-    expect(validateEsim({ provider: "A", headline: "", url: "http://a.com", countries: [] }).error).toMatch(/https/);
+    expect(validateOffer({ provider: "", headline: "", url: "https://a.com", countries: [] }).error).toMatch(/name/);
+    expect(validateOffer({ provider: "A", headline: "", url: "http://a.com", countries: [] }).error).toMatch(/https/);
   });
 });

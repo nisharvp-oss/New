@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ReceiptButton, ReceiptInput, removeReceipt, uploadReceipt } from "@/components/ws/Receipt";
 
 /** "company" = the travel company / organisers paid it. */
 const COMPANY = "company";
@@ -26,7 +27,9 @@ function useExpenseData(tripId: string) {
   const balances = netBalances(exps, sets);
   const names = new Map<string, string>([[COMPANY, "Organisers"], ...(travelers.data ?? []).map((t) => [t.id, t.name] as [string, string])]);
   const name = (id: string) => names.get(id) ?? "Removed traveler";
-  return { travelers: travelers.data ?? [], exps, sets, balances, transfers: simplifyDebts(balances), name };
+  // receipt_path (migration 0016) is newer than the generated types.
+  const receipts = new Map((expenses.data ?? []).map((e) => [e.id, (e as { receipt_path?: string | null }).receipt_path ?? null]));
+  return { travelers: travelers.data ?? [], exps, sets, balances, transfers: simplifyDebts(balances), name, receipts };
 }
 
 export function StaffExpenses({ tripId }: { tripId: string }) {
@@ -38,6 +41,8 @@ export function StaffExpenses({ tripId }: { tripId: string }) {
   const [type, setType] = useState<Expense["splitType"]>("equal");
   const [picked, setPicked] = useState<string[] | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
+  const [receipt, setReceipt] = useState<Blob | null>(null);
+  const [saving, setSaving] = useState(false);
   const members = picked ?? d.travelers.map((t) => t.id);
   const refresh = () => { qc.invalidateQueries({ queryKey: ["expenses", tripId] }); qc.invalidateQueries({ queryKey: ["settlements", tripId] }); };
 
@@ -49,9 +54,19 @@ export function StaffExpenses({ tripId }: { tripId: string }) {
     const splits = computeSplits(amt, members, type, nums);
     const sum = splits.reduce((s, x) => s + x.amount, 0);
     if (Math.abs(sum - amt) > 0.011) { toast.error(type === "percent" ? "Percentages must add up to 100" : `Shares add up to ${money(sum)}, not ${money(amt)}`); return; }
-    const { error } = await supabase.from("trip_expenses").insert({ trip_id: tripId, description: desc.trim(), amount: amt, paid_by: paidBy, split_type: type, splits: splits as never });
-    if (error) { toast.error(error.message); return; }
-    toast.success("Cost added"); setDesc(""); setAmount(""); setValues({}); refresh();
+    setSaving(true);
+    let receipt_path: string | null = null;
+    try {
+      if (receipt) receipt_path = await uploadReceipt(tripId, "shared", receipt);
+      const { error } = await supabase.from("trip_expenses").insert({ trip_id: tripId, description: desc.trim(), amount: amt, paid_by: paidBy, split_type: type, splits: splits as never, receipt_path } as never);
+      if (error) throw new Error(error.message);
+      toast.success("Cost added"); setDesc(""); setAmount(""); setValues({}); setReceipt(null); refresh();
+    } catch (err) {
+      await removeReceipt(receipt_path);
+      toast.error((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
   };
   const settle = async (from: string, to: string, amt: number) => {
     const { error } = await supabase.from("trip_settlements").insert({ trip_id: tripId, from_id: from, to_id: to, amount: amt });
@@ -59,7 +74,9 @@ export function StaffExpenses({ tripId }: { tripId: string }) {
   };
   const del = async (table: "trip_expenses" | "trip_settlements", id: string) => {
     const { error } = await supabase.from(table).delete().eq("id", id);
-    if (error) toast.error(error.message); else refresh();
+    if (error) { toast.error(error.message); return; }
+    if (table === "trip_expenses") await removeReceipt(d.receipts.get(id));
+    refresh();
   };
 
   return (
@@ -82,7 +99,8 @@ export function StaffExpenses({ tripId }: { tripId: string }) {
             <div key={e.id} className="p-3 text-sm">
               <div className="flex items-center gap-2">
                 <span className="flex-1 font-medium">{e.description}</span><span className="font-bold">{money(e.amount)}</span>
-                <Button size="icon" variant="ghost" onClick={() => del("trip_expenses", e.id)}><Trash2 className="h-4 w-4" /></Button>
+                {d.receipts.get(e.id) && <ReceiptButton path={d.receipts.get(e.id)!} label={`Receipt: ${e.description}`} />}
+                <Button size="icon" variant="ghost" aria-label={`Delete ${e.description}`} onClick={() => del("trip_expenses", e.id)}><Trash2 className="h-4 w-4" /></Button>
               </div>
               <p className="text-muted-foreground">Paid by {d.name(e.paidBy)} · split {e.splitType} between {e.splits.length}</p>
             </div>
@@ -126,7 +144,8 @@ export function StaffExpenses({ tripId }: { tripId: string }) {
             })}
             {d.travelers.length === 0 && <p className="text-sm text-muted-foreground">Add travelers first.</p>}
           </div>
-          <Button className="w-full">Add cost</Button>
+          <div className="space-y-1.5"><Label>Receipt (optional)</Label><ReceiptInput value={receipt} onChange={setReceipt} /></div>
+          <Button className="w-full" disabled={saving}>{saving ? "Saving…" : "Add cost"}</Button>
         </form>
       </Card>
     </div>
@@ -150,6 +169,7 @@ export function TravelerExpenses({ tripId, travelerId }: { tripId: string; trave
           return (
             <div key={e.id} className="flex items-center gap-2 p-3 text-sm">
               <span className="flex-1"><span className="font-medium">{e.description}</span><br /><span className="text-muted-foreground">Paid by {d.name(e.paidBy)} · total {money(e.amount)}</span></span>
+              {d.receipts.get(e.id) && <ReceiptButton path={d.receipts.get(e.id)!} label={`Receipt: ${e.description}`} />}
               <Badge variant="secondary">Your share {money(share)}</Badge>
             </div>
           );

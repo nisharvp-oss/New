@@ -14,7 +14,7 @@ import scuba from "@/assets/addon-scuba.jpg";
 import cook from "@/assets/addon-cook.jpg";
 import { Face, HomeScreen, PhoneFrame, SosScreen, SplitScreen, TicketScreen } from "./Phone";
 import { useSiteImages } from "@/lib/site-images.functions";
-import { Car as CarArt, CityScene, Ferry, MountainScene, Plane as PlaneArt, SeaScene, SkyScene, Train as TrainArt } from "./JourneyArt";
+import { Car as CarArt, CityScene, Ferry, MiniCity, MiniPeaks, MiniSea, MiniSky, MountainScene, Plane as PlaneArt, SeaScene, SkyScene, Train as TrainArt } from "./JourneyArt";
 
 const d = (ms: number) => ({ "--d": `${ms}ms` }) as CSSProperties;
 
@@ -147,16 +147,17 @@ const STEPS: { kicker: string; icon: typeof Ticket; title: string; body: string;
 
 /** The vehicle and scene for each leg of the route, from the hero phone down to the last feature. */
 export const JOURNEY_LEGS = [
-  { label: "By air", Vehicle: PlaneArt, Scene: SkyScene, tilt: 28 },
-  { label: "By sea", Vehicle: Ferry, Scene: SeaScene, tilt: 10 },
-  { label: "By rail", Vehicle: TrainArt, Scene: MountainScene, tilt: 14 },
-  { label: "By road", Vehicle: CarArt, Scene: CityScene, tilt: 10 },
+  { label: "By air", Vehicle: PlaneArt, Scene: SkyScene, Mini: MiniSky, tilt: 28 },
+  { label: "By sea", Vehicle: Ferry, Scene: SeaScene, Mini: MiniSea, tilt: 10 },
+  { label: "By rail", Vehicle: TrainArt, Scene: MountainScene, Mini: MiniPeaks, tilt: 14 },
+  { label: "By road", Vehicle: CarArt, Scene: CityScene, Mini: MiniCity, tilt: 10 },
 ];
 
 /**
  * Route drawn between the hero phone and each feature phone; journey.ts sizes the paths from the
  * stops' positions, moves each vehicle along its leg as the page scrolls, and shows that leg's
- * scene (wide screens only) while the vehicle is on the move.
+ * scene while the vehicle is on the move: beside the route on wide screens, a mini version riding
+ * behind the vehicle on the narrow timeline.
  */
 export function JourneyOverlay() {
   return (
@@ -164,6 +165,11 @@ export function JourneyOverlay() {
       {JOURNEY_LEGS.map(({ Scene }, i) => (
         <div key={i} data-scene={i} data-active="false" className="absolute left-0 top-0 hidden h-[170px] w-[360px] lg:block">
           <div className="scene-depth h-full w-full"><Scene /></div>
+        </div>
+      ))}
+      {JOURNEY_LEGS.map(({ Mini }, i) => (
+        <div key={i} data-companion={i} data-active="false" className="absolute left-0 top-0 h-[38px] w-[56px] lg:hidden">
+          <Mini />
         </div>
       ))}
       <svg data-route className="absolute left-0 top-0 overflow-visible">

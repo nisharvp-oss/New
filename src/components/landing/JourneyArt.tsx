@@ -166,3 +166,51 @@ export function CityScene() {
     </svg>
   );
 }
+
+/* ---------- Mini scenes (64 x 44) that ride behind each vehicle on the narrow timeline ---------- */
+
+export function MiniSky() {
+  return (
+    <svg viewBox="0 0 64 44" className="h-full w-full overflow-visible">
+      <g className="art-drift" style={{ animationDuration: "5s" }}><Cloud x={2} y={2} s={0.62} /></g>
+      <path className="art-flap stroke-navy/40" d="M44 8 q3 -3 6 0 q3 -3 6 0" fill="none" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function MiniSea() {
+  return (
+    <svg viewBox="0 0 64 44" className="h-full w-full overflow-visible">
+      <g className="art-jump" style={{ transformOrigin: "26px 34px", animationDuration: "2.4s" }}>
+        <path d={DOLPHIN} transform="translate(14 14) scale(0.55)" className="fill-primary/80" />
+      </g>
+      <path className="art-wave stroke-primary/45" style={{ ["--wave" as string]: "-16px" }} d="M-8 40 q4 -4 8 0 t8 0 t8 0 t8 0 t8 0 t8 0 t8 0 t8 0 t8 0 t8 0" fill="none" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function MiniPeaks() {
+  return (
+    <svg viewBox="0 0 64 44" className="h-full w-full overflow-visible">
+      <path d="M0 44 L22 12 L34 28 L44 16 L64 44Z" className="fill-primary/20" />
+      <path d="M17 19 L22 12 L27 19 L24 18 L22 21 L20 18Z" className="fill-card" />
+      {[[8, 44, 0.45], [54, 44, 0.5]].map(([x, y, s]) => (
+        <path key={x} d="M0 0 L-9 -20 L-4 -20 L-11 -34 L-5 -34 L0 -46 L5 -34 L11 -34 L4 -20 L9 -20Z" transform={`translate(${x} ${y}) scale(${s})`} className="fill-success/70" />
+      ))}
+    </svg>
+  );
+}
+
+export function MiniCity() {
+  return (
+    <svg viewBox="0 0 64 44" className="h-full w-full overflow-visible">
+      {([[2, 22, 10], [14, 32, 9], [36, 26, 10], [48, 18, 12]] as const).map(([x, h, w], i) => (
+        <g key={x}>
+          <rect x={x} y={44 - h} width={w} height={h} rx="1.5" className={i % 2 ? "fill-primary/25" : "fill-navy/15"} />
+          <rect x={x + 3} y={44 - h + 5} width="2.5" height="2.5" className="art-twinkle fill-sunset/70" style={{ animationDelay: `${i * 0.7}s` }} />
+        </g>
+      ))}
+      <path d="M27 44 L27 10 L29 2 L31 10 L31 44Z" className="fill-primary/35" />
+    </svg>
+  );
+}

@@ -4,7 +4,7 @@
  * reveal and parallax transforms never skew the measurements.
  */
 type Box = { x: number; y: number; w: number; h: number };
-type Leg = { ax: number; ay: number; bx: number; by: number; len: number; base: SVGPathElement; line: SVGPathElement; vehicle: HTMLElement; scene: HTMLElement | undefined };
+type Leg = { ax: number; ay: number; bx: number; by: number; len: number; base: SVGPathElement; line: SVGPathElement; vehicle: HTMLElement; scene: HTMLElement | undefined; companion: HTMLElement | undefined };
 
 function boxWithin(el: HTMLElement, root: HTMLElement): Box {
   let x = 0, y = 0;
@@ -27,6 +27,7 @@ export function createJourney(root: HTMLElement) {
   const dots = [...svg.querySelectorAll<SVGCircleElement>("[data-dot]")];
   const vehicles = [...overlay.querySelectorAll<HTMLElement>("[data-vehicle]")];
   const scenes = [...overlay.querySelectorAll<HTMLElement>("[data-scene]")];
+  const companions = [...overlay.querySelectorAll<HTMLElement>("[data-companion]")];
   let legs: Leg[] = [];
 
   const stop = (i: number, wide: boolean) => {
@@ -76,7 +77,7 @@ export function createJourney(root: HTMLElement) {
         const mid = base.getPointAtLength(len / 2);
         scene.style.transform = `translate(${mid.x - scene.offsetWidth / 2}px, ${mid.y - scene.offsetHeight / 2}px)`;
       }
-      legs[i] = { ax, ay, bx, by, len, base, line, vehicle: vehicles[i]!, scene };
+      legs[i] = { ax, ay, bx, by, len, base, line, vehicle: vehicles[i]!, scene, companion: visible(companions[i] ?? null) ? companions[i] : undefined };
       dots[i]?.setAttribute("cx", String(ax));
       dots[i]?.setAttribute("cy", String(ay));
       dots[i + 1]?.setAttribute("cx", String(bx));
@@ -110,9 +111,16 @@ export function createJourney(root: HTMLElement) {
     const w = leg.vehicle.offsetWidth, h = leg.vehicle.offsetHeight;
     leg.vehicle.style.transform = `translate(${pt.x - w / 2}px, ${pt.y - h / 2}px) rotate(${tilt}deg) scaleX(${face})`;
     leg.vehicle.style.opacity = "1";
+    const travelling = String(p > 0.02 && p < 0.98);
     if (leg.scene) {
-      leg.scene.dataset["active"] = String(p > 0.02 && p < 0.98);
+      leg.scene.dataset["active"] = travelling;
       leg.scene.style.setProperty("--p", String(p));
+    }
+    if (leg.companion) {
+      // Sits just behind the vehicle, so the vehicle looks like it's passing through it.
+      const c = leg.companion;
+      c.style.transform = `translate(${pt.x - c.offsetWidth / 2}px, ${pt.y - c.offsetHeight - h / 2 + 10}px)`;
+      c.dataset["active"] = travelling;
     }
   }
 

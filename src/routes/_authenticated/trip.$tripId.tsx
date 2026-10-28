@@ -18,6 +18,9 @@ import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { mapsUrl } from "@/components/ws/shared";
+import { OpenInMaps } from "@/components/ws/OpenInMaps";
+import { CheckinLink } from "@/components/ws/AirlineCheckin";
+import { airlineFromFlight } from "@/lib/airlines";
 import { QRCodeSVG } from "qrcode.react";
 import { QrScanner } from "@/components/ws/QrScanner";
 import { emailAnnouncement } from "@/lib/smtp.functions";
@@ -222,7 +225,7 @@ function StaffView({ tripId, destination, isFree, showSponsors, unlockRequested 
           <Siren className="h-8 w-8" />
           <div className="flex-1"><p className="font-extrabold">SOS from {a.traveler_name} · {new Date(a.created_at).toLocaleTimeString()}</p>
             <p className="text-sm opacity-90">{a.message || "Emergency assistance requested"} · {a.phone}</p></div>
-          {a.lat != null && <Button size="sm" variant="secondary" asChild><a href={`https://www.google.com/maps?q=${a.lat},${a.lng}`} target="_blank" rel="noreferrer">Open map</a></Button>}
+          {a.lat != null && a.lng != null && <OpenInMaps place={{ lat: a.lat, lng: a.lng, label: a.traveler_name }} variant="secondary" />}
           <Button size="sm" variant="outline" className="bg-transparent" onClick={() => resolve(a.id)}>Resolve</Button>
         </div>
       ))}
@@ -587,6 +590,7 @@ function TicketCard({ t, name, onStatus }: { t: Ticket; name?: string | undefine
         {t.valid_on && <p className="text-sm text-muted-foreground">Valid {t.valid_on}</p>}
         {t.details && <p className="text-sm text-muted-foreground">{t.details}</p>}
         <p className="font-mono text-xs text-muted-foreground">{t.code}</p>
+        {(() => { const airline = airlineFromFlight(t.title); return airline ? <CheckinLink airline={airline} className="mt-1" /> : null; })()}
         {onStatus && <div className="flex gap-1 pt-1">{["valid", "used", "void"].filter((x) => x !== t.status).map((x) => <Button key={x} size="sm" variant="outline" onClick={() => onStatus(x)}>Mark {x}</Button>)}</div>}
       </div>
     </Card>

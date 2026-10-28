@@ -135,7 +135,7 @@ function RootComponent() {
   const isDemo = path === "/demo" || path === "/traveler";
   // The landing and sign-in pages draw their own chrome.
   const ownChrome = path === "/" || path === "/auth";
-  const inApp = /^\/(dashboard|company|trip|sponsor|admin)(\/|$)/.test(path);
+  const inApp = /^\/(dashboard|company|trip|sponsor|admin|tools)(\/|$)/.test(path);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {

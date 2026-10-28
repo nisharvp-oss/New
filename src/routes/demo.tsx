@@ -19,6 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useApp, memberName, money, type Meal, type PayMethod, type TicketType } from "@/lib/store";
 import { Avatar, QRCode, addonImages, cover, mapsUrl, useHydratedStore } from "@/components/ws/shared";
+import { OpenInMaps } from "@/components/ws/OpenInMaps";
 
 export const Route = createFileRoute("/demo")({
   head: () => ({
@@ -47,13 +48,11 @@ function Organizer() {
         return (
           <div key={a.id} className="flex flex-wrap items-center gap-4 rounded-2xl bg-destructive p-4 text-destructive-foreground sos-pulse">
             <Siren className="h-8 w-8 shrink-0" />
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 basis-56">
               <p className="font-extrabold">SOS from {m?.name} · {new Date(a.at).toLocaleTimeString()}</p>
               <p className="text-sm opacity-90">{a.message || "Emergency assistance requested"} · {m?.phone} · {a.lat.toFixed(5)}, {a.lng.toFixed(5)}</p>
             </div>
-            <Button variant="secondary" size="sm" asChild>
-              <a href={`https://www.google.com/maps?q=${a.lat},${a.lng}`} target="_blank" rel="noreferrer"><MapPin className="h-4 w-4" /> Open in Google Maps</a>
-            </Button>
+            <OpenInMaps place={{ lat: a.lat, lng: a.lng, label: m?.name }} label="Open location" variant="secondary" />
             <Button variant="outline" size="sm" className="border-destructive-foreground/40 bg-transparent" onClick={() => { s.resolveSos(a.id); toast.success("Alert marked resolved"); }}>
               Resolve
             </Button>
@@ -357,7 +356,7 @@ function SafetyTab() {
               <p className="text-sm text-muted-foreground">{a.message || "Emergency assistance requested"} · {m?.phone}</p>
             </div>
             <Badge variant={a.status === "active" ? "sos" : "muted"}>{a.status === "active" ? "SOS" : "Resolved"}</Badge>
-            <Button size="sm" variant="outline" asChild><a href={`https://www.google.com/maps?q=${a.lat},${a.lng}`} target="_blank" rel="noreferrer"><MapPin className="h-4 w-4" /> Map</a></Button>
+            <OpenInMaps place={{ lat: a.lat, lng: a.lng, label: memberName(a.memberId, members) }} />
             {a.status === "active" && <Button size="sm" onClick={() => resolveSos(a.id)}>Resolve</Button>}
           </Card>
         );

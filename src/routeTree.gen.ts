@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as TravelerRouteImport } from './routes/traveler'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -43,6 +44,11 @@ const DemoRoute = DemoRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ToolsRoute = ToolsRouteImport.update({
+  id: '/tools',
+  path: '/tools',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TravelerRoute = TravelerRouteImport.update({
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/demo': typeof DemoRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/tools': typeof ToolsRoute
   '/traveler': typeof TravelerRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/demo': typeof DemoRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/tools': typeof ToolsRoute
   '/traveler': typeof TravelerRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/demo': typeof DemoRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/tools': typeof ToolsRoute
   '/traveler': typeof TravelerRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/demo'
     | '/reset-password'
+    | '/tools'
     | '/traveler'
     | '/admin'
     | '/dashboard'
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/demo'
     | '/reset-password'
+    | '/tools'
     | '/traveler'
     | '/admin'
     | '/dashboard'
@@ -147,6 +158,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/demo'
     | '/reset-password'
+    | '/tools'
     | '/traveler'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
@@ -161,6 +173,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DemoRoute: typeof DemoRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ToolsRoute: typeof ToolsRoute
   TravelerRoute: typeof TravelerRoute
 }
 
@@ -199,6 +212,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tools': {
+      id: '/tools'
+      path: '/tools'
+      fullPath: '/tools'
+      preLoaderRoute: typeof ToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/traveler': {
@@ -271,6 +291,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   DemoRoute: DemoRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ToolsRoute: ToolsRoute,
   TravelerRoute: TravelerRoute,
 }
 export const routeTree = rootRouteImport

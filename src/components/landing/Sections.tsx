@@ -39,6 +39,7 @@ export function Nav() {
           {[["#features", "Features"], ["#split", "Split bills"], ["#pricing", "Pricing"]].map(([h, l]) => (
             <a key={h} href={h} className={cn("hidden rounded-lg px-3 py-2 md:inline", scrolled ? "text-muted-foreground hover:text-foreground" : "text-white/80 hover:text-white")}>{l}</a>
           ))}
+          <Link to="/tools" className={cn("hidden rounded-lg px-3 py-2 md:inline", scrolled ? "text-muted-foreground hover:text-foreground" : "text-white/80 hover:text-white")}>Tools</Link>
           {user ? (
             <Button size="sm" className="ml-1 rounded-full px-4" asChild><Link to="/dashboard">Open app</Link></Button>
           ) : (
@@ -446,6 +447,7 @@ export function Footer() {
         <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
           <Link to="/demo" className="hover:text-foreground">Sample trip</Link>
           <Link to="/traveler" className="hover:text-foreground">Traveler app</Link>
+          <Link to="/tools" className="hover:text-foreground">Travel tools</Link>
           <Link to="/sponsor" className="hover:text-foreground">For local businesses</Link>
           <Link to="/auth" search={{ plan: undefined }} className="hover:text-foreground">Sign in</Link>
         </nav>

@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Crown, Home, LogOut, Megaphone, PlayCircle, UserRound } from "lucide-react";
+import { Crown, Home, LogOut, Megaphone, UserRound, Wrench } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
@@ -38,6 +38,7 @@ export function AppHeader() {
         <Link to={user ? "/dashboard" : "/"} aria-label="WanderSync home"><Wordmark /></Link>
         <nav className="flex items-center gap-1 text-sm">
           <Link to="/demo" className="hidden rounded-lg px-3 py-2 text-navy-foreground/75 hover:text-navy-foreground md:inline">Demo</Link>
+          <Link to="/tools" className="hidden rounded-lg px-3 py-2 text-navy-foreground/75 hover:text-navy-foreground md:inline">Tools</Link>
           {user ? (
             <>
               <Link to="/dashboard" className="hidden rounded-lg px-3 py-2 text-navy-foreground/75 hover:text-navy-foreground md:inline">Workspace</Link>
@@ -76,7 +77,7 @@ export function MobileTabBar() {
         <div className="mx-auto flex max-w-md px-2">
           <Link to="/dashboard" className={item(isHome)}>{dot(isHome)}<Home className="h-5 w-5" />Trips</Link>
           <Link to="/sponsor" className={item(path === "/sponsor")}>{dot(path === "/sponsor")}<Megaphone className="h-5 w-5" />Sponsor</Link>
-          <Link to="/demo" className={item(path === "/demo")}>{dot(path === "/demo")}<PlayCircle className="h-5 w-5" />Demo</Link>
+          <Link to="/tools" className={item(path === "/tools")}>{dot(path === "/tools")}<Wrench className="h-5 w-5" />Tools</Link>
           <button type="button" onClick={() => setOpen(true)} className={item(open)}>{dot(open)}<UserRound className="h-5 w-5" />Account</button>
         </div>
       </nav>

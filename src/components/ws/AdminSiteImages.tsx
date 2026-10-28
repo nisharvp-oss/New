@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SITE_IMAGE_SLOTS, SITE_MEDIA_BUCKET, resolveSiteImages, type SiteImageRow, type SiteImageSlot } from "@/lib/site-images";
 import { siteImagesQuery } from "@/lib/site-images.functions";
+import { prepareImage } from "@/lib/image-upload";
 
 // site_images is newer than the generated database types; this is the slice of the client we use.
 type SiteImagesTable = {
@@ -20,18 +21,6 @@ const siteImagesTable = () => (supabase as unknown as { from: (t: "site_images")
 
 const MAX_EDGE = 2400;
 const MAX_UPLOAD_MB = 20;
-
-/** Scales a photo down to MAX_EDGE on its long side and re-encodes it as JPEG, so pages stay fast. */
-async function prepareImage(file: File): Promise<Blob> {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Couldn't read this image"))), "image/jpeg", 0.82));
-}
 
 export function AdminSiteImages({ userId }: { userId: string }) {
   const qc = useQueryClient();
@@ -66,7 +55,7 @@ function SlotCard({ slot, current, row, userId, onChanged }: {
     if (file.size > MAX_UPLOAD_MB * 1024 * 1024) { toast.error(`Choose a photo under ${MAX_UPLOAD_MB} MB`); return; }
     setBusy(true);
     try {
-      const blob = await prepareImage(file);
+      const blob = await prepareImage(file, MAX_EDGE);
       const path = `${slot}/${Date.now()}.jpg`;
       const bucket = supabase.storage.from(SITE_MEDIA_BUCKET);
       const up = await bucket.upload(path, blob, { contentType: "image/jpeg", cacheControl: "31536000", upsert: false });

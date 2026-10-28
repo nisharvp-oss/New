@@ -99,6 +99,13 @@
       "when": 1793117553118,
       "tag": "0013_airlines",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793118153118,
+      "tag": "0014_esim_offers",
+      "breakpoints": true
     }
   ]
 }

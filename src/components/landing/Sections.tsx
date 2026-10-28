@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import {
-  ArrowRight, ArrowUpRight, Banknote, BellRing, Briefcase, CarFront, Check, CheckCircle2, ClipboardList, CreditCard, FileText, Link2,
-  MapPin, Navigation, Phone, Plane, QrCode, ShieldCheck, Ship, Siren, Star, Ticket, TrainFront, Users, Utensils, Wallet,
+  ArrowRight, ArrowUpRight, Banknote, BellRing, Briefcase, Check, CheckCircle2, ClipboardList, CreditCard, FileText, Link2,
+  MapPin, Navigation, Phone, QrCode, ShieldCheck, Siren, Star, Ticket, Users, Utensils, Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Wordmark } from "@/components/ws/Brand";
@@ -14,6 +14,7 @@ import scuba from "@/assets/addon-scuba.jpg";
 import cook from "@/assets/addon-cook.jpg";
 import { Face, HomeScreen, PhoneFrame, SosScreen, SplitScreen, TicketScreen } from "./Phone";
 import { useSiteImages } from "@/lib/site-images.functions";
+import { Car as CarArt, CityScene, Ferry, MountainScene, Plane as PlaneArt, SeaScene, SkyScene, Train as TrainArt } from "./JourneyArt";
 
 const d = (ms: number) => ({ "--d": `${ms}ms` }) as CSSProperties;
 
@@ -144,21 +145,27 @@ const STEPS: { kicker: string; icon: typeof Ticket; title: string; body: string;
   },
 ];
 
-/** The vehicles that carry the route from one phone to the next. */
+/** The vehicle and scene for each leg of the route, from the hero phone down to the last feature. */
 export const JOURNEY_LEGS = [
-  { icon: Plane, label: "By air" },
-  { icon: Ship, label: "By sea" },
-  { icon: TrainFront, label: "By rail" },
-  { icon: CarFront, label: "By road" },
+  { label: "By air", Vehicle: PlaneArt, Scene: SkyScene, tilt: 28 },
+  { label: "By sea", Vehicle: Ferry, Scene: SeaScene, tilt: 10 },
+  { label: "By rail", Vehicle: TrainArt, Scene: MountainScene, tilt: 14 },
+  { label: "By road", Vehicle: CarArt, Scene: CityScene, tilt: 10 },
 ];
 
 /**
- * Route drawn between the hero phone and each feature phone; motion.ts sizes the paths
- * from the stops' positions and moves each vehicle along its leg as the page scrolls.
+ * Route drawn between the hero phone and each feature phone; journey.ts sizes the paths from the
+ * stops' positions, moves each vehicle along its leg as the page scrolls, and shows that leg's
+ * scene (wide screens only) while the vehicle is on the move.
  */
 export function JourneyOverlay() {
   return (
     <div aria-hidden data-journey-overlay className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+      {JOURNEY_LEGS.map(({ Scene }, i) => (
+        <div key={i} data-scene={i} data-active="false" className="absolute left-0 top-0 hidden h-[170px] w-[360px] lg:block">
+          <div className="scene-depth h-full w-full"><Scene /></div>
+        </div>
+      ))}
       <svg data-route className="absolute left-0 top-0 overflow-visible">
         {JOURNEY_LEGS.map((_, i) => (
           <g key={i} data-leg={i}>
@@ -168,10 +175,10 @@ export function JourneyOverlay() {
         ))}
         {[0, 1, 2, 3, 4].map((i) => <circle key={i} data-dot={i} r="7" className="fill-primary stroke-card" strokeWidth="3.5" />)}
       </svg>
-      {JOURNEY_LEGS.map((leg, i) => (
-        <span key={i} data-vehicle={i} className="absolute left-0 top-0 grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-glow ring-4 ring-card ring-1 ring-black/5 transition-opacity duration-300">
-          <leg.icon className="h-[22px] w-[22px]" />
-        </span>
+      {JOURNEY_LEGS.map(({ Vehicle, tilt }, i) => (
+        <div key={i} data-vehicle={i} data-tilt={tilt} className="absolute left-0 top-0 h-[28px] w-[54px] opacity-0 drop-shadow-lg transition-opacity duration-300 lg:h-[52px] lg:w-[98px]">
+          <Vehicle />
+        </div>
       ))}
     </div>
   );
@@ -181,7 +188,7 @@ export function FeatureStory() {
   return (
     <section id="features" className="scroll-mt-20 pb-16 pt-20 sm:pb-24 sm:pt-28">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="relative max-w-2xl pl-12 lg:pl-0" data-reveal>
+        <div className="relative max-w-2xl pl-16 lg:pl-0" data-reveal>
           <span data-stop-m="0" className="absolute left-0 top-1 h-6 w-6 lg:hidden" />
           <p className="font-semibold text-primary">Everything in one app</p>
           <h2 className="mt-3 text-[clamp(2rem,4.6vw,3.5rem)] font-extrabold leading-[1.05] tracking-[-0.03em]">Your whole trip, in everyone's pocket</h2>
@@ -192,7 +199,7 @@ export function FeatureStory() {
           {STEPS.map((s, i) => {
             const phoneLeft = i % 2 === 0;
             return (
-              <li key={s.title} data-stop-m={i + 1} className="grid items-center gap-10 pl-12 lg:grid-cols-2 lg:gap-20 lg:pl-0">
+              <li key={s.title} data-stop-m={i + 1} className="grid items-center gap-10 pl-16 lg:grid-cols-2 lg:gap-20 lg:pl-0">
                 <div data-reveal className={cn("max-w-lg", phoneLeft ? "lg:order-2" : "lg:justify-self-end")}>
                   <span className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1.5 text-sm font-semibold text-primary">
                     <s.icon className="h-4 w-4" />{s.kicker}

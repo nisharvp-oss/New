@@ -4,7 +4,7 @@
  * reveal and parallax transforms never skew the measurements.
  */
 type Box = { x: number; y: number; w: number; h: number };
-type Leg = { ax: number; ay: number; bx: number; by: number; len: number; base: SVGPathElement; line: SVGPathElement; vehicle: HTMLElement };
+type Leg = { ax: number; ay: number; bx: number; by: number; len: number; base: SVGPathElement; line: SVGPathElement; vehicle: HTMLElement; scene: HTMLElement | undefined };
 
 function boxWithin(el: HTMLElement, root: HTMLElement): Box {
   let x = 0, y = 0;
@@ -26,6 +26,7 @@ export function createJourney(root: HTMLElement) {
   const legEls = [...svg.querySelectorAll<SVGGElement>("[data-leg]")];
   const dots = [...svg.querySelectorAll<SVGCircleElement>("[data-dot]")];
   const vehicles = [...overlay.querySelectorAll<HTMLElement>("[data-vehicle]")];
+  const scenes = [...overlay.querySelectorAll<HTMLElement>("[data-scene]")];
   let legs: Leg[] = [];
 
   const stop = (i: number, wide: boolean) => {
@@ -60,7 +61,7 @@ export function createJourney(root: HTMLElement) {
         }
       } else {
         // Narrow screens: a straight timeline in the left gutter beside each step.
-        ax = bx = a.x + 12;
+        ax = bx = a.x + 26;
         ay = a.y + (i === 0 ? 12 : 22);
         by = b.y + 22;
         d = `M ${ax} ${ay} L ${bx} ${by}`;
@@ -69,7 +70,13 @@ export function createJourney(root: HTMLElement) {
       line.setAttribute("d", d);
       const len = base.getTotalLength();
       line.style.strokeDasharray = `${len}`;
-      legs[i] = { ax, ay, bx, by, len, base, line, vehicle: vehicles[i]! };
+      const scene = scenes[i];
+      if (scene && visible(scene)) {
+        // Centre the scene on the middle of the leg, where it crosses the gap between rows.
+        const mid = base.getPointAtLength(len / 2);
+        scene.style.transform = `translate(${mid.x - scene.offsetWidth / 2}px, ${mid.y - scene.offsetHeight / 2}px)`;
+      }
+      legs[i] = { ax, ay, bx, by, len, base, line, vehicle: vehicles[i]!, scene };
       dots[i]?.setAttribute("cx", String(ax));
       dots[i]?.setAttribute("cy", String(ay));
       dots[i + 1]?.setAttribute("cx", String(bx));
@@ -77,14 +84,36 @@ export function createJourney(root: HTMLElement) {
     });
   }
 
-  /** Draws leg `i` up to `p` (0–1) and parks its vehicle at `at` along it (defaults to `p`). */
+  /**
+   * Draws leg `i` up to `p` (0–1) and parks its vehicle at `at` along it (defaults to `p`). The vehicle
+   * faces its direction of travel and tilts with the path, within its leg's limit; on near-vertical
+   * stretches it stays level and faces the way the leg is heading overall.
+   */
   function setProgress(i: number, p: number, at = p) {
     const leg = legs[i];
     if (!leg) return;
     leg.line.style.strokeDashoffset = `${leg.len * (1 - p)}`;
-    const pt = leg.base.getPointAtLength(leg.len * Math.min(1, Math.max(0, at)));
-    leg.vehicle.style.transform = `translate(${pt.x - 24}px, ${pt.y - 24}px)`;
+    const d = leg.len * Math.min(1, Math.max(0, at));
+    const pt = leg.base.getPointAtLength(d);
+    const back = leg.base.getPointAtLength(Math.max(0, d - 3));
+    const ahead = leg.base.getPointAtLength(Math.min(leg.len, d + 3));
+    const dx = ahead.x - back.x, dy = ahead.y - back.y;
+    const maxTilt = Number(leg.vehicle.dataset["tilt"] ?? 15);
+    let face = leg.bx - leg.ax < -1 ? -1 : 1;
+    let tilt = 0;
+    if (Math.abs(dx) > Math.abs(dy) * 0.35) {
+      face = dx < 0 ? -1 : 1;
+      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+      tilt = face > 0 ? angle : ((angle + 360) % 360) - 180;
+      tilt = Math.max(-maxTilt, Math.min(maxTilt, tilt));
+    }
+    const w = leg.vehicle.offsetWidth, h = leg.vehicle.offsetHeight;
+    leg.vehicle.style.transform = `translate(${pt.x - w / 2}px, ${pt.y - h / 2}px) rotate(${tilt}deg) scaleX(${face})`;
     leg.vehicle.style.opacity = "1";
+    if (leg.scene) {
+      leg.scene.dataset["active"] = String(p > 0.02 && p < 0.98);
+      leg.scene.style.setProperty("--p", String(p));
+    }
   }
 
   /** Scroll positions where leg `i` starts and finishes: it travels while its path crosses the lower half of the screen. */

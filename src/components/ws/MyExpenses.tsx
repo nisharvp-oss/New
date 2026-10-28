@@ -96,8 +96,10 @@ export function MyExpenses({ tripId }: { tripId: string }) {
   if (list.isError) return <p className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm">My expenses didn't load: {(list.error as Error).message}</p>;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-      <div className="space-y-4">
+    <div className="grid gap-4 lg:grid-cols-[1fr_360px] lg:grid-rows-[auto_1fr] lg:items-start">
+      {/* Phones: converter first, then expenses, then the add form. Desktop: expenses left, both cards right. */}
+      <div className="lg:col-start-2 lg:row-start-1"><Converter rates={rates} home={homeCurrency} /></div>
+      <div className="space-y-4 lg:col-start-1 lg:row-span-2 lg:row-start-1">
         <Card className="overflow-hidden shadow-card">
           <div className="bg-navy p-5 text-navy-foreground">
             <div className="flex items-start justify-between gap-3">
@@ -161,10 +163,7 @@ export function MyExpenses({ tripId }: { tripId: string }) {
           </Card>
         ))}
       </div>
-      <div className="space-y-4">
-        <Converter rates={rates} home={homeCurrency} />
-        <AddExpense tripId={tripId} uid={uid.data ?? null} onAdded={refresh} />
-      </div>
+      <div className="lg:col-start-2 lg:row-start-2"><AddExpense tripId={tripId} uid={uid.data ?? null} onAdded={refresh} /></div>
     </div>
   );
 }

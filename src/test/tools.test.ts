@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AIRLINES, airlineFromFlight, checkinSearchUrl, searchAirlines } from "@/lib/airlines";
+import { AIRLINES, airlineFromFlight, checkinSearchUrl, searchAirlines, validateAirline } from "@/lib/airlines";
 import { detectPlatform, mapLinks, shareText } from "@/lib/maps";
 
 describe("airlines", () => {
@@ -56,5 +56,19 @@ describe("maps", () => {
 
   it("writes a shareable message with a map link", () => {
     expect(shareText(sos)).toBe("Alex Rivera: https://www.google.com/maps/search/?api=1&query=25.197197,55.274376");
+  });
+});
+
+describe("validateAirline", () => {
+  it("tidies the input and accepts a valid airline", () => {
+    expect(validateAirline({ code: " ek ", name: " Emirates ", region: "UAE ", url: " https://www.emirates.com/ " }))
+      .toEqual({ value: { code: "EK", name: "Emirates", region: "UAE", url: "https://www.emirates.com/" }, error: null });
+  });
+
+  it("explains what's wrong", () => {
+    expect(validateAirline({ code: "EKX", name: "x", region: "", url: "https://a.com" }).error).toMatch(/2-character code/);
+    expect(validateAirline({ code: "EK", name: " ", region: "", url: "https://a.com" }).error).toMatch(/name/);
+    expect(validateAirline({ code: "EK", name: "Emirates", region: "", url: "http://emirates.com" }).error).toMatch(/https/);
+    expect(validateAirline({ code: "EK", name: "Emirates", region: "", url: "emirates.com" }).error).toMatch(/https/);
   });
 });

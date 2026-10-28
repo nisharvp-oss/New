@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MapPin, Plane } from "lucide-react";
 import { AirlineCheckin } from "@/components/ws/AirlineCheckin";
+import { airlinesQuery } from "@/lib/airlines.functions";
 
 export const Route = createFileRoute("/tools")({
   head: () => ({
@@ -11,6 +12,7 @@ export const Route = createFileRoute("/tools")({
       { property: "og:description", content: "Free travel tools for groups: airline online check-in and more." },
     ],
   }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(airlinesQuery),
   component: Tools,
 });
 

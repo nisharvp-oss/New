@@ -18,8 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useApp, memberName, money, type Meal, type PayMethod, type Expense } from "@/lib/store";
 import { computeSplits, netBalances, simplifyDebts } from "@/lib/splitwise";
 import { Avatar, QRCode, addonImages, mapsUrl, useHydratedStore } from "@/components/ws/shared";
-import { CheckinLink } from "@/components/ws/AirlineCheckin";
-import { airlineFromFlight } from "@/lib/airlines";
+import { FlightCheckinButton } from "@/components/ws/AirlineCheckin";
 import { cn } from "@/lib/utils";
 import { useSiteImages } from "@/lib/site-images.functions";
 
@@ -185,7 +184,7 @@ function TicketsView({ meId }: { meId: string }) {
           <div className="flex flex-col items-center gap-2 p-5">
             <QRCode value={t.qr} size={200} />
             <p className="font-mono text-xs tracking-widest text-muted-foreground">{t.qr}</p>
-            {t.type === "flight" && (() => { const airline = airlineFromFlight(t.title); return airline ? <CheckinLink airline={airline} className="mt-2" /> : null; })()}
+            {t.type === "flight" && <FlightCheckinButton title={t.title} className="mt-2" />}
           </div>
         </Card>
       ))}

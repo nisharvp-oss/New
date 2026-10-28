@@ -3,7 +3,8 @@ import { ChevronsUpDown, ExternalLink, Plane, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { AIRLINES, checkinSearchUrl, searchAirlines, type Airline } from "@/lib/airlines";
+import { airlineFromFlight, checkinSearchUrl, searchAirlines, type Airline } from "@/lib/airlines";
+import { useAirlines } from "@/lib/airlines.functions";
 
 const open = (url: string) => window.open(url, "_blank", "noopener,noreferrer");
 
@@ -12,7 +13,8 @@ export function AirlineCheckin() {
   const [openList, setOpenList] = useState(false);
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<Airline | null>(null);
-  const results = searchAirlines(query);
+  const airlines = useAirlines();
+  const results = searchAirlines(query, airlines);
 
   const choose = (a: Airline) => {
     setPicked(a);
@@ -44,7 +46,7 @@ export function AirlineCheckin() {
                   </Button>
                 </div>
               </CommandEmpty>
-              {results.length > 0 && <CommandGroup heading={query ? `${results.length} match${results.length === 1 ? "" : "es"}` : `${AIRLINES.length} airlines`}>
+              {results.length > 0 && <CommandGroup heading={query ? `${results.length} match${results.length === 1 ? "" : "es"}` : `${airlines.length} airlines`}>
                 {results.map((a) => (
                   <CommandItem key={a.code} value={a.code} onSelect={() => choose(a)} className="gap-3 py-2.5">
                     <span className="w-8 shrink-0 rounded-md bg-muted py-0.5 text-center font-board text-xs font-semibold">{a.code}</span>
@@ -67,8 +69,10 @@ export function AirlineCheckin() {
   );
 }
 
-/** "Online check-in" button for a ticket whose title has a flight number we recognise. */
-export function CheckinLink({ airline, className }: { airline: Airline; className?: string }) {
+/** "<Airline> check-in" button for a ticket whose title has a flight number we list; nothing otherwise. */
+export function FlightCheckinButton({ title, className }: { title: string; className?: string }) {
+  const airline = airlineFromFlight(title, useAirlines());
+  if (!airline) return null;
   return (
     <Button size="sm" variant="outline" className={className} asChild>
       <a href={airline.url} target="_blank" rel="noopener noreferrer"><Plane /> {airline.name} check-in <ExternalLink className="opacity-60" /></a>

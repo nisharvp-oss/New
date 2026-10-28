@@ -68,3 +68,16 @@ export function airlineFromFlight(text: string, list: Airline[] = AIRLINES): Air
 export function checkinSearchUrl(airline: string) {
   return `https://www.google.com/search?q=${encodeURIComponent(`${airline.trim()} online check-in`)}`;
 }
+
+export type AirlineInput = { code: string; name: string; region: string; url: string };
+
+/** Cleans an admin's edit and says what's wrong with it, matching the database checks. */
+export function validateAirline(input: AirlineInput): { value: AirlineInput; error: string | null } {
+  const value = { code: input.code.trim().toUpperCase(), name: input.name.trim(), region: input.region.trim(), url: input.url.trim() };
+  if (!/^[A-Z0-9]{2}$/.test(value.code)) return { value, error: "Use the airline's 2-character code, like EK or 6E" };
+  if (!value.name) return { value, error: "Enter the airline's name" };
+  let ok = false;
+  try { ok = new URL(value.url).protocol === "https:" && !/\s/.test(value.url); } catch { ok = false; }
+  if (!ok) return { value, error: "Enter the full check-in link, starting with https://" };
+  return { value, error: null };
+}

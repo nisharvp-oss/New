@@ -27,7 +27,7 @@ WanderSync is a multi-tenant group-travel SaaS:
 - `src/routes/demo.tsx`, `traveler.tsx` — browser-only demo using `src/lib/store.ts`.
 - `src/components/ws/` feature components (TripOps, TripExpenses, TripSponsors, SponsorMedia, QrScanner, SmtpForm, AdminPaymentsAndAdmins).
 - Pure, tested logic: `src/lib/splitwise.ts` (expense splits), `src/lib/subscription.ts` (mirrors DB `company_is_writable`), `src/lib/geo.ts` (sponsor sorting/distance), `src/lib/airlines.ts` (airline check-in pages, search, flight-number matching), `src/lib/maps.ts` (open a location in the user's own maps app: Google/Apple/Waze links, Android `geo:` chooser).
-- Tools (`/tools`, public): free tools that only link out to official sites or the user's own apps, never paid third-party APIs. Airline check-in URLs were checked against each airline's site; unknown airlines fall back to a web search.
+- Tools (`/tools`, public): free tools that only link out to official sites or the user's own apps, never paid third-party APIs. Airlines live in the `airlines` table (migration 0013, public read, super-admin writes; managed in Admin → Airlines) and are read with `useAirlines()`; `AIRLINES` in `src/lib/airlines.ts` is the bundled fallback and the seed. Unknown airlines fall back to a web search.
 - Migrations: `drizzle/migrations/*.sql` (plain SQL, applied by tooling). Generated DB types: `src/integrations/supabase/types.ts` (don't hand-edit).
 
 ## Design system & app shell

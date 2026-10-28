@@ -19,8 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { mapsUrl } from "@/components/ws/shared";
 import { OpenInMaps } from "@/components/ws/OpenInMaps";
-import { CheckinLink } from "@/components/ws/AirlineCheckin";
-import { airlineFromFlight } from "@/lib/airlines";
+import { FlightCheckinButton } from "@/components/ws/AirlineCheckin";
 import { QRCodeSVG } from "qrcode.react";
 import { QrScanner } from "@/components/ws/QrScanner";
 import { emailAnnouncement } from "@/lib/smtp.functions";
@@ -590,7 +589,7 @@ function TicketCard({ t, name, onStatus }: { t: Ticket; name?: string | undefine
         {t.valid_on && <p className="text-sm text-muted-foreground">Valid {t.valid_on}</p>}
         {t.details && <p className="text-sm text-muted-foreground">{t.details}</p>}
         <p className="font-mono text-xs text-muted-foreground">{t.code}</p>
-        {(() => { const airline = airlineFromFlight(t.title); return airline ? <CheckinLink airline={airline} className="mt-1" /> : null; })()}
+        <FlightCheckinButton title={t.title} className="mt-1" />
         {onStatus && <div className="flex gap-1 pt-1">{["valid", "used", "void"].filter((x) => x !== t.status).map((x) => <Button key={x} size="sm" variant="outline" onClick={() => onStatus(x)}>Mark {x}</Button>)}</div>}
       </div>
     </Card>
